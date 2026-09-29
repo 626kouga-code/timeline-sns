@@ -1,0 +1,24 @@
+# 依存関係・ビルド成果物
+node_modules/
+dist/
+build/
+.gradle/
+out/
+coverage/
+
+# ログ
+*.log
+
+# 環境変数（サンプルは管理する）
+.env
+.env.*
+!.env.example
+
+# IDE・OS
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Claude Code の個人設定
+.claude/settings.local.json
