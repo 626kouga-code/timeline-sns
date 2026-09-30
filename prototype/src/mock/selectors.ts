@@ -60,6 +60,18 @@ export const followersOf = (db: Db, userId: string): User[] =>
     .map((f) => findUser(db, f.followerId))
     .filter((u): u is User => !!u && u.status === 'ACTIVE')
 
+// ユーザーIDと表示名の部分一致。大文字小文字は区別せず、凍結ユーザーとブロック関係のユーザーは除外する（F-44）
+export function searchUsers(db: Db, query: string, viewerId: string | null): User[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return []
+  return db.users.filter(
+    (u) =>
+      u.status === 'ACTIVE' &&
+      (!viewerId || !isBlockedBetween(db, viewerId, u.id)) &&
+      (u.handle.toLowerCase().includes(q) || u.displayName.toLowerCase().includes(q)),
+  )
+}
+
 export const unreadCount = (db: Db, userId: string): number =>
   db.notifications.filter((n) => n.recipientId === userId && !n.readAt).length
 

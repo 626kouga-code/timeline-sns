@@ -36,6 +36,7 @@ http://localhost:5174 を開きます。本実装のフロントエンド（5173
 | 投稿作成 | モーダル |
 | 投稿詳細（コメント・返信） | `/posts/:id` |
 | プロフィール / フォロー・フォロワー一覧 | `/users/:handle` `/users/:handle/following` `/users/:handle/followers` |
+| ユーザー検索 | `/search?q=` |
 | プロフィール編集 | `/settings/profile` |
 | 通知 | `/notifications` |
 | 管理画面 | `/admin/reports` |

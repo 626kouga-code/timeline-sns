@@ -38,6 +38,12 @@ const shapes = {
   pen: <path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" />,
   flag: <path d="M5 21V4h11l-2 4 2 4H5" />,
   trash: <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-4-4" />
+    </>
+  ),
   ban: (
     <>
       <circle cx="12" cy="12" r="9" />

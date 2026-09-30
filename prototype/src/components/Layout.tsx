@@ -30,6 +30,7 @@ export function Layout() {
     ? [
         { to: '/home', label: 'ホーム', icon: 'home' },
         { to: '/', label: '全体', icon: 'globe', end: true },
+        { to: '/search', label: '検索', icon: 'search' },
         { to: '/notifications', label: '通知', icon: 'bell', badge: unreadCount(db, me.id) },
         { to: `/users/${me.handle}`, label: 'プロフィール', icon: 'user' },
         { to: '/settings/profile', label: '設定', icon: 'settings' },
@@ -37,6 +38,7 @@ export function Layout() {
       ]
     : [
         { to: '/', label: '全体', icon: 'globe', end: true },
+        { to: '/search', label: '検索', icon: 'search' },
         { to: '/login', label: 'ログイン', icon: 'login' },
       ]
 

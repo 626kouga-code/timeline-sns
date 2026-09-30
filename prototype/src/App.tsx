@@ -9,6 +9,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage'
 import { PostDetailPage } from './pages/PostDetailPage'
 import { ProfileEditPage } from './pages/ProfileEditPage'
 import { FollowListPage, ProfilePage } from './pages/ProfilePage'
+import { SearchPage } from './pages/SearchPage'
 import { TimelinePage } from './pages/TimelinePage'
 
 function RequireAuth({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="users/:handle" element={<ProfilePage />} />
         <Route path="users/:handle/following" element={<FollowListPage kind="following" />} />
         <Route path="users/:handle/followers" element={<FollowListPage kind="followers" />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="settings/profile" element={<RequireAuth><ProfileEditPage /></RequireAuth>} />
         <Route path="notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
         <Route path="admin/reports" element={<RequireAuth admin><AdminReportsPage /></RequireAuth>} />
