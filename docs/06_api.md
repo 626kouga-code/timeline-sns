@@ -19,7 +19,8 @@ REST（JSON）で提供する。一覧は `?cursor=<最後のid>&limit=20` の�
 | | `POST /api/posts/{id}/likes` `DELETE /api/posts/{id}/likes` | いいね・取り消し |
 | コメント | `GET /api/posts/{id}/comments` `POST /api/posts/{id}/comments` | 一覧・作成（`parentId` を指定すると返信） |
 | | `DELETE /api/comments/{id}` | 削除 |
-| ユーザー | `GET /api/users/{handle}` `GET /api/users/{handle}/posts` | プロフィール・投稿一覧 |
+| ユーザー | `GET /api/search/users?q=<キーワード>` | ユーザー検索（ユーザーID・表示名の部分一致） |
+| | `GET /api/users/{handle}` `GET /api/users/{handle}/posts` | プロフィール・投稿一覧 |
 | | `GET /api/users/{handle}/following` `GET /api/users/{handle}/followers` | フォロー・フォロワー一覧 |
 | | `PUT /api/users/{handle}/follow` `DELETE /api/users/{handle}/follow` | フォロー・解除 |
 | | `PUT /api/users/{handle}/block` `DELETE /api/users/{handle}/block` | ブロック・解除 |

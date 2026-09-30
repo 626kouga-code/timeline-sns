@@ -14,6 +14,7 @@
 | 投稿作成 | （モーダル） | 必要 | テキストと画像 4 枚まで |
 | 投稿詳細 | `/posts/:id` | 不要 | 本文、画像、コメントスレッド |
 | プロフィール | `/users/:handle` | 不要 | 投稿一覧、フォロー・フォロワー |
+| ユーザー検索 | `/search?q=` | 不要 | ユーザーID・表示名で検索 |
 | フォロー・フォロワー一覧 | `/users/:handle/following` `/users/:handle/followers` | 不要 | |
 | プロフィール編集 | `/settings/profile` | 必要 | アイコン、表示名、自己紹介 |
 | アカウント設定 | `/settings/account` | 必要 | パスワード変更、ブロック一覧、退会 |
@@ -26,6 +27,7 @@ flowchart LR
     Guest --> Signup[新規登録]
     Guest --> Detail[投稿詳細]
     Guest --> Profile[プロフィール]
+    Guest --> Search[ユーザー検索]
     Signup --> Verify[メール確認]
     Verify --> Home
     Login -->|メール| Home[ホームタイムライン]
@@ -35,6 +37,8 @@ flowchart LR
     Home --> Detail
     Home --> Profile
     Home --> Notify[通知]
+    Home --> Search
+    Search --> Profile
     Notify --> Detail
     Notify --> Profile
     Detail --> Profile
