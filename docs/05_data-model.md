@@ -21,7 +21,7 @@ erDiagram
 
 | テーブル | 主な項目 | 制約・インデックス |
 | --- | --- | --- |
-| users | id, email, password_hash（NULL 可）, email_verified_at, handle, display_name, bio, avatar_key, role（USER / ADMIN）, status（ACTIVE / SUSPENDED）, created_at | email・handle は一意 |
+| users | id, email, password_hash（NULL 可）, email_verified_at, handle, display_name, bio, avatar_key, role（USER / ADMIN）, status（ACTIVE / SUSPENDED）, created_at | email・handle は一意。handle・display_name に部分一致検索用の GIN インデックス（pg_trgm） |
 | auth_providers | id, user_id, provider（GOOGLE）, provider_user_id, created_at | (provider, provider_user_id) で一意 |
 | refresh_tokens | id, user_id, token_hash, expires_at, revoked_at, created_at | token_hash で一意 |
 | email_verifications | id, user_id, token_hash, expires_at, used_at | |
