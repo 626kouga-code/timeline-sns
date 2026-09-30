@@ -1,0 +1,38 @@
+# ローカル開発用のサービス。本番（AWS）では RDS・SES に置き換わる。
+# 値はローカル専用の固定値なので、本番の設定には使わないこと。
+# S3 互換ストレージは、MinIO のイメージが配布されなくなったため未導入（選定は別 Issue で行う）。
+name: timeline-sns
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: timeline
+      POSTGRES_USER: timeline
+      POSTGRES_PASSWORD: timeline
+    # ホスト側は 5433。別プロジェクトの PostgreSQL（5432）と同時に起動できるようにするため
+    ports:
+      - "5433:5432"
+    volumes:
+      # PostgreSQL 18 のイメージはデータを /var/lib/postgresql/18/docker に置くため、親ディレクトリをマウントする
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U timeline -d timeline"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 送信メールの確認用。受信箱は http://localhost:8025、SMTP は localhost:1025
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
