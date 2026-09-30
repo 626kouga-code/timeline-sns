@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: timeline-sns
+  datasource:
+    # 既定値はローカルの docker-compose（ホスト側 5433）。本番は環境変数で上書きする
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/timeline}
+    username: ${DB_USERNAME:timeline}
+    password: ${DB_PASSWORD:timeline}
+  jpa:
+    # スキーマは Flyway で管理し、Hibernate には検証だけさせる
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
+
+server:
+  # ポートは固定。埋まっていても別ポートには移らない（.claude/skills/dev-server-ports）
+  port: 8080

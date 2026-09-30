@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs の除外設定。除外を追加するときは、理由をコメントで残すこと。
+-->
+<FindBugsFilter>
+    <!--
+      Spring の DI で受け取った Bean をフィールドに保持すると EI_EXPOSE_REP2 が出るが、
+      Bean は共有される前提のオブジェクトなので防御的コピーは不要。
+    -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>
