@@ -77,7 +77,7 @@ cd backend
 ./gradlew bootRun
 ```
 
-`http://localhost:8080`でREST API（`/api/...`）が起動します。DBのテーブルは起動時にFlywayのマイグレーションで作成されます。ポートは固定のため、既に8080が使用中の場合は起動に失敗します（詳細は[.claude/skills/dev-server-ports/SKILL.md](.claude/skills/dev-server-ports/SKILL.md)）。
+`http://localhost:8080`でREST API（`/api/...`）が起動します。`bootRun`ではローカル用の設定（`application-local.yml`。JWTの署名鍵の開発用の値を含む）が有効になります。本番などそれ以外の環境では、環境変数`JWT_SECRET`に32バイト以上の署名鍵を設定しないと起動に失敗します。DBのテーブルは起動時にFlywayのマイグレーションで作成されます。ポートは固定のため、既に8080が使用中の場合は起動に失敗します（詳細は[.claude/skills/dev-server-ports/SKILL.md](.claude/skills/dev-server-ports/SKILL.md)）。
 
 ### 3. フロントエンド起動
 

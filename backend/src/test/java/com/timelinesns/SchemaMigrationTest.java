@@ -3,12 +3,11 @@ package com.timelinesns;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.timelinesns.support.IntegrationTest;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,8 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 各テストはトランザクション内で実行し、終了時にロールバックする。
  * PostgreSQL ではエラー後のトランザクションが使えなくなるため、制約違反の確認は 1 テストにつき 1 つにしている。
  */
-@Import(TestcontainersConfiguration.class)
-@SpringBootTest
+@IntegrationTest
 @Transactional
 class SchemaMigrationTest {
 

@@ -1,4 +1,8 @@
 # ローカル開発用の設定（./gradlew bootRun で有効になる）。本番では使わない
+app:
+  auth:
+    jwt-secret: local-development-secret-do-not-use-in-production
+
 logging:
   level:
     com.timelinesns: DEBUG

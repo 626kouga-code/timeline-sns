@@ -1,0 +1,4 @@
+# 結合テスト用の設定（@IntegrationTest で有効になる）
+app:
+  auth:
+    jwt-secret: test-secret-for-integration-tests-only-0123456789
