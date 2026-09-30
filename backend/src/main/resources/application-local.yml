@@ -1,0 +1,4 @@
+# ローカル開発用の設定（./gradlew bootRun で有効になる）。本番では使わない
+logging:
+  level:
+    com.timelinesns: DEBUG

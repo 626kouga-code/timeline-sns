@@ -52,7 +52,7 @@ MVP（最初の公開版）で実装する機能です。詳細と優先度は[�
 ### 前提
 
 - Node.js 24（フロントエンド）
-- Java 25（バックエンド。Gradleは同梱のGradle Wrapperを使う）
+- Java 17以上（Gradleの実行用）。バックエンドのビルドに使うJava 25は、Gradleのtoolchain機能で自動ダウンロードされる。Gradleは同梱のGradle Wrapperを使う
 - Docker / Docker Compose（PostgreSQL・MinIO・Mailpit用）
 
 ### 1. ローカル用サービスの起動
