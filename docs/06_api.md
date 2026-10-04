@@ -14,6 +14,7 @@ REST（JSON）で提供する。一覧は `?cursor=<最後のid>&limit=20` の�
 | | `POST /api/auth/password-reset/request` `POST /api/auth/password-reset/confirm` | パスワード再設定 |
 | | `GET /oauth2/authorization/google` | Google ログイン開始 |
 | タイムライン | `GET /api/timeline/home` `GET /api/timeline/global` | ホーム／全体タイムライン |
+| | `GET /api/timeline/home/new-count?since=<id>` `GET /api/timeline/global/new-count?since=<id>` | 新着件数（`since` より新しい投稿の数。新着表示に使う） |
 | 投稿 | `POST /api/posts`（multipart） | 投稿作成（画像つき） |
 | | `GET /api/posts/{id}` `DELETE /api/posts/{id}` | 取得・削除 |
 | | `POST /api/posts/{id}/likes` `DELETE /api/posts/{id}/likes` | いいね・取り消し |

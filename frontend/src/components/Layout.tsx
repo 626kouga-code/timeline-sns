@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { useAuth } from '../auth/context'
 import { Avatar } from './Avatar'
+import { ComposeModal } from './ComposeModal'
 import { Icon, type IconName } from './Icon'
+import type { LayoutContext } from './layoutContext'
 
 interface NavItem {
   to: string
@@ -13,6 +16,7 @@ interface NavItem {
 export function Layout() {
   const { me, logout } = useAuth()
   const navigate = useNavigate()
+  const [composeOpen, setComposeOpen] = useState(false)
 
   const items: NavItem[] = me
     ? [
@@ -60,6 +64,17 @@ export function Layout() {
               </NavLink>
             ))}
           </nav>
+          {me && (
+            <button
+              type="button"
+              onClick={() => setComposeOpen(true)}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-sky-500 py-3 font-bold text-white shadow hover:bg-sky-600"
+              aria-label="投稿する"
+            >
+              <Icon name="pen" className="size-6 xl:hidden" />
+              <span className="hidden xl:inline">投稿する</span>
+            </button>
+          )}
         </div>
         {me && (
           <div className="flex items-center gap-3 rounded-full p-2">
@@ -82,7 +97,7 @@ export function Layout() {
       </header>
 
       <main className="min-h-screen min-w-0 flex-1 border-slate-100 pb-20 sm:border-x sm:pb-0 lg:max-w-[600px]">
-        <Outlet />
+        <Outlet context={{ openCompose: () => setComposeOpen(true) } satisfies LayoutContext} />
       </main>
 
       {/* 下部ナビ（スマホ） */}
@@ -104,6 +119,19 @@ export function Layout() {
           </button>
         )}
       </nav>
+      {me && (
+        <button
+          type="button"
+          onClick={() => setComposeOpen(true)}
+          className="fixed right-4 bottom-20 z-40 rounded-full bg-sky-500 p-4 text-white shadow-lg sm:hidden"
+          aria-label="投稿する"
+        >
+          <Icon name="pen" className="size-6" />
+        </button>
+      )}
+
+      {/* ログアウトしたら閉じる */}
+      {composeOpen && me && <ComposeModal onClose={() => setComposeOpen(false)} />}
     </div>
   )
 }

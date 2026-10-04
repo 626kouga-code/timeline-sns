@@ -1,46 +1,12 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
-import App from '../App'
-import { AppProviders } from '../AppProviders'
-
-const user = {
-  id: 'u1',
-  email: 'taro@example.com',
-  handle: 'taro',
-  displayName: '太郎',
-  bio: null,
-  role: 'USER',
-  emailVerified: false,
-}
-
-const json = (status: number, body: unknown) =>
-  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
-
-const noSession = () => json(401, { code: 'INVALID_REFRESH_TOKEN', detail: 'ログインしてください' })
-
-// パスごとに応答を返す fetch のモック。起動時のリフレッシュは未ログイン（401）にする
-function mockApi(handlers: Record<string, () => Response>) {
-  const fetchMock = vi.fn(async (path: string) => (handlers[path] ?? noSession)())
-  vi.stubGlobal('fetch', fetchMock)
-  return fetchMock
-}
-
-function renderApp(path: string, state?: unknown) {
-  render(
-    <MemoryRouter initialEntries={[{ pathname: path, state }]}>
-      <AppProviders>
-        <App />
-      </AppProviders>
-    </MemoryRouter>,
-  )
-}
+import { describe, expect, it } from 'vitest'
+import { json, mockApi, renderApp, session, user } from '../test/utils'
 
 describe('ログイン画面', () => {
   it('ログインに成功したら、開こうとしていた画面へ移る', async () => {
     const fetchMock = mockApi({
-      '/api/auth/login': () => json(200, { accessToken: 't', tokenType: 'Bearer', expiresIn: 900, user }),
+      '/api/auth/login': () => session(),
     })
     renderApp('/login', { from: '/notifications' })
 
@@ -70,7 +36,7 @@ describe('ログイン画面', () => {
 
   it('ログイン必須の画面でログアウトすると、ログイン画面ではなくトップへ移る', async () => {
     mockApi({
-      '/api/auth/refresh': () => json(200, { accessToken: 't', tokenType: 'Bearer', expiresIn: 900, user }),
+      '/api/auth/refresh': () => session(),
       '/api/auth/logout': () => new Response(null, { status: 204 }),
     })
     renderApp('/home')
