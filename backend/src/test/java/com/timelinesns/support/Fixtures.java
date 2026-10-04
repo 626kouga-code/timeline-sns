@@ -4,7 +4,10 @@ import com.timelinesns.auth.AccessTokenService;
 import com.timelinesns.user.UserRepository;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -64,5 +67,31 @@ public class Fixtures {
     public void comment(UUID userId, UUID postId, boolean deleted) {
         jdbc.update("INSERT INTO comments (post_id, user_id, body, deleted_at) VALUES (?, ?, 'c', ?)",
                 postId, userId, deleted ? Timestamp.from(Instant.now()) : null);
+    }
+
+    /**
+     * コメント（parentId を渡すと返信）を入れて ID を返す。入れた順に新しくなる。
+     */
+    public UUID comment(UUID userId, UUID postId, @Nullable UUID parentId, String body) {
+        return jdbc.queryForObject(
+                "INSERT INTO comments (post_id, user_id, parent_id, body) VALUES (?, ?, ?, ?) RETURNING id",
+                UUID.class, postId, userId, parentId, body);
+    }
+
+    /**
+     * 返信 {@code depth} 段の系統（コメント → 返信 → 返信への返信 …）を入れ、上（ルート）から順に ID を返す。
+     */
+    public List<UUID> chain(UUID userId, UUID postId, int depth) {
+        List<UUID> ids = new ArrayList<>();
+        @Nullable UUID parent = null;
+        for (int i = 0; i < depth; i++) {
+            parent = comment(userId, postId, parent, "depth " + i);
+            ids.add(parent);
+        }
+        return ids;
+    }
+
+    public void markCommentDeleted(UUID commentId) {
+        jdbc.update("UPDATE comments SET deleted_at = now(), body = '' WHERE id = ?", commentId);
     }
 }

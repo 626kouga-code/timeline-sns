@@ -38,6 +38,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
+    // テストで実行 SQL を数え、N+1 が起きていないことを確かめる（support/QueryCounter）
+    testImplementation("net.ttddyy:datasource-proxy:1.10.1")
     testCompileOnly("com.github.spotbugs:spotbugs-annotations:4.10.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

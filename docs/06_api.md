@@ -17,9 +17,9 @@ REST（JSON）で提供する。一覧は `?cursor=<最後のid>&limit=20` の�
 | | `GET /api/timeline/home/new-count?since=<id>` `GET /api/timeline/global/new-count?since=<id>` | 新着件数（`since` より新しい投稿の数。新着表示に使う） |
 | 投稿 | `POST /api/posts`（multipart） | 投稿作成（画像つき） |
 | | `GET /api/posts/{id}` `DELETE /api/posts/{id}` | 取得・削除 |
-| | `POST /api/posts/{id}/likes` `DELETE /api/posts/{id}/likes` | いいね・取り消し |
-| コメント | `GET /api/posts/{id}/comments` `POST /api/posts/{id}/comments` | 一覧・作成（`parentId` を指定すると返信） |
-| | `DELETE /api/comments/{id}` | 削除 |
+| | `POST /api/posts/{id}/likes` `DELETE /api/posts/{id}/likes` | いいね・取り消し（冪等。応答は `{ liked, likeCount }`） |
+| コメント | `GET /api/posts/{id}/comments` `POST /api/posts/{id}/comments` | 一覧（全件を古い順の平らな配列で返す。スレッドはフロントで組み立てる）・作成（`parentId` を指定すると返信） |
+| | `DELETE /api/comments/{id}` | 削除（本人のみ。返信が付いていれば論理削除、なければ物理削除） |
 | ユーザー | `GET /api/search/users?q=<キーワード>` | ユーザー検索（ユーザーID・表示名の部分一致） |
 | | `GET /api/users/{handle}` `GET /api/users/{handle}/posts` | プロフィール・投稿一覧 |
 | | `GET /api/users/{handle}/following` `GET /api/users/{handle}/followers` | フォロー・フォロワー一覧 |

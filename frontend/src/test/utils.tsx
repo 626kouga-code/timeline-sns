@@ -39,7 +39,7 @@ export function post(id: string, body: string, author: Pick<Me, 'id' | 'handle' 
 
 type Handler = (path: string, init?: RequestInit) => Response | Promise<Response>
 
-// 指定がなければタイムラインは空にする
+// 指定がなければタイムラインとコメント欄は空にする
 const defaults: Record<string, Handler> = {
   '/api/timeline/global': () => page([]),
   '/api/timeline/home': () => page([]),
@@ -47,12 +47,13 @@ const defaults: Record<string, Handler> = {
 
 /**
  * パスごとに応答を返す fetch のモック。クエリ文字列つきのパスで見つからなければ、クエリを除いたパスで探す。
- * 指定のないパス（起動時のリフレッシュなど）は未ログイン（401）にする。
+ * 指定のないパス（起動時のリフレッシュなど）は未ログイン（401）にする。コメント一覧だけは空の配列を返す。
  */
 export function mockApi(handlers: Record<string, Handler>) {
   const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
     const pathname = path.split('?')[0]
-    const handler = handlers[path] ?? handlers[pathname] ?? defaults[pathname] ?? noSession
+    const fallback = /^\/api\/posts\/[^/]+\/comments$/.test(pathname) ? () => json(200, []) : noSession
+    const handler = handlers[path] ?? handlers[pathname] ?? defaults[pathname] ?? fallback
     return handler(path, init)
   })
   vi.stubGlobal('fetch', fetchMock)

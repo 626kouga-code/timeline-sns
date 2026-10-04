@@ -46,3 +46,24 @@ export interface Page<T> {
   items: T[]
   nextCursor: string | null
 }
+
+/** コメント（CommentResponse）。スレッドの組み立てはフロントで行う */
+export interface Comment {
+  id: string
+  /** 返信先のコメント。投稿への直接のコメントなら null */
+  parentId: string | null
+  /** 削除済みなら null */
+  body: string | null
+  /** ISO 8601 */
+  createdAt: string
+  /** 削除済み（退会したユーザーのものを含む）なら null */
+  author: PostAuthor | null
+  /** 返信が付いているので「このコメントは削除されました」として残っている */
+  deleted: boolean
+}
+
+/** いいね・取り消しの応答（LikeResponse） */
+export interface LikeState {
+  liked: boolean
+  likeCount: number
+}

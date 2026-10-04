@@ -3,11 +3,12 @@ import type { Post } from '../api/types'
 import { useAuth } from '../auth/context'
 import { Avatar } from './Avatar'
 import { Icon } from './Icon'
+import { LikeButton } from './LikeButton'
 import { Menu, type MenuItem } from './Menu'
 import { formatRelative } from './time'
 import { useDeletePost } from './useDeletePost'
 
-// タイムラインの 1 件。いいね（#20）・通報（#31）の操作はそれぞれの Issue で追加する
+// タイムラインの 1 件。通報の操作は #31 で追加する
 export function PostCard({ post }: { post: Post }) {
   const { me } = useAuth()
   const navigate = useNavigate()
@@ -49,13 +50,7 @@ export function PostCard({ post }: { post: Post }) {
             <Icon name="comment" className="size-[18px]" />
             {post.commentCount}
           </span>
-          <span
-            className={`flex items-center gap-1.5 ${post.liked ? 'text-pink-600' : ''}`}
-            aria-label={`いいね ${post.likeCount} 件`}
-          >
-            <Icon name="heart" filled={post.liked} className="size-[18px]" />
-            {post.likeCount}
-          </span>
+          <LikeButton post={post} />
         </div>
       </div>
     </article>
