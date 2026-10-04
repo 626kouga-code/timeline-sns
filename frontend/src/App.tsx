@@ -1,0 +1,49 @@
+import type { ReactNode } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
+import { useAuth } from './auth/context'
+import { Layout } from './components/Layout'
+import { LoginPage, SignupPage } from './pages/AuthPages'
+import { PlaceholderPage } from './pages/PlaceholderPage'
+
+function RequireAuth({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
+  const { me } = useAuth()
+  const location = useLocation()
+  if (!me) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  if (admin && me.role !== 'ADMIN') return <Navigate to="/home" replace />
+  return children
+}
+
+// ログイン・登録画面。ログイン済みになったら、ログイン前に開こうとしていた画面（なければホーム）へ移る
+function GuestOnly({ children }: { children: ReactNode }) {
+  const { me } = useAuth()
+  const location = useLocation()
+  const from = (location.state as { from?: string } | null)?.from ?? '/home'
+  return me ? <Navigate to={from} replace /> : children
+}
+
+// パスは docs/04_screens.md の画面一覧に合わせる。準備中の画面は各 Issue で本来の画面に置き換える
+export default function App() {
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<PlaceholderPage title="全体タイムライン" feature="F-21 全体タイムライン（#19）" back={false} />} />
+        <Route path="home" element={<RequireAuth><PlaceholderPage title="ホーム" feature="F-20 ホームタイムライン（#18）" back={false} /></RequireAuth>} />
+        <Route path="login" element={<GuestOnly><LoginPage /></GuestOnly>} />
+        <Route path="signup" element={<GuestOnly><SignupPage /></GuestOnly>} />
+        <Route path="posts/:id" element={<PlaceholderPage title="投稿" feature="F-13 投稿詳細（#16）" />} />
+        <Route path="users/:handle" element={<PlaceholderPage title="プロフィール" feature="F-40 プロフィール表示（#24）" />} />
+        <Route path="users/:handle/following" element={<PlaceholderPage title="フォロー中" feature="F-43 フォロー・フォロワー一覧（#27）" />} />
+        <Route path="users/:handle/followers" element={<PlaceholderPage title="フォロワー" feature="F-43 フォロー・フォロワー一覧（#27）" />} />
+        <Route path="search" element={<PlaceholderPage title="検索" feature="F-44 ユーザー検索（#37）" />} />
+        <Route path="settings/profile" element={<RequireAuth><PlaceholderPage title="プロフィール編集" feature="F-41 プロフィール編集（#25）" /></RequireAuth>} />
+        <Route path="notifications" element={<RequireAuth><PlaceholderPage title="通知" feature="F-50 通知一覧（#28）" /></RequireAuth>} />
+        <Route path="admin/reports" element={<RequireAuth admin><PlaceholderPage title="通報一覧" feature="F-62 管理画面（#32）" /></RequireAuth>} />
+        <Route path="verify-email" element={<PlaceholderPage title="メール確認" feature="F-02 メールアドレス確認（#8）" />} />
+        <Route path="password-reset" element={<PlaceholderPage title="パスワード再設定" feature="F-05 パスワードリセット（#11）" />} />
+        <Route path="onboarding" element={<PlaceholderPage title="ユーザーID設定" feature="F-04 Google ログイン（#10）" />} />
+        <Route path="settings/account" element={<RequireAuth><PlaceholderPage title="アカウント設定" feature="パスワード変更・ブロック一覧・F-06 退会（#12）" /></RequireAuth>} />
+        <Route path="*" element={<PlaceholderPage title="ページが見つかりません" feature="URL を確認してください" />} />
+      </Route>
+    </Routes>
+  )
+}
