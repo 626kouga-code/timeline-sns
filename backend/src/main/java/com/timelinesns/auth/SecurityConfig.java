@@ -57,7 +57,7 @@ public class SecurityConfig {
                         .permitAll()
                         // ゲストも閲覧できる API（docs/04 の「ログイン不要」の画面で使うもの）
                         .requestMatchers(HttpMethod.GET,
-                                "/api/timeline/global", "/api/posts/**", "/api/users/**", "/api/search/**")
+                                "/api/timeline/global/**", "/api/posts/**", "/api/users/**", "/api/search/**")
                         .permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()

@@ -3,6 +3,9 @@ import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 import { setAccessToken } from '../api/client'
 
+// jsdom は scrollTo を実装していない
+window.scrollTo = () => {}
+
 afterEach(() => {
   cleanup()
   setAccessToken(null)

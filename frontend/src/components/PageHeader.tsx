@@ -28,3 +28,24 @@ export function PageHeader({ title, subtitle, back = false, children }: Props) {
     </div>
   )
 }
+
+export function Tabs({ tabs }: { tabs: { label: string; active: boolean; onClick: () => void }[] }) {
+  return (
+    <div className="flex">
+      {tabs.map((tab) => (
+        <button
+          key={tab.label}
+          type="button"
+          onClick={tab.onClick}
+          aria-pressed={tab.active}
+          className="flex flex-1 justify-center py-3 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+        >
+          <span className={`relative py-1 ${tab.active ? 'text-slate-900' : ''}`}>
+            {tab.label}
+            {tab.active && <span className="absolute inset-x-0 -bottom-3 h-1 rounded-full bg-sky-500" />}
+          </span>
+        </button>
+      ))}
+    </div>
+  )
+}

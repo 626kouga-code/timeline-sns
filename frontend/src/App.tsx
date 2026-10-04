@@ -4,6 +4,8 @@ import { useAuth } from './auth/context'
 import { Layout } from './components/Layout'
 import { LoginPage, SignupPage } from './pages/AuthPages'
 import { PlaceholderPage } from './pages/PlaceholderPage'
+import { PostDetailPage } from './pages/PostDetailPage'
+import { TimelinePage } from './pages/TimelinePage'
 
 function RequireAuth({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
   const { me } = useAuth()
@@ -26,11 +28,11 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<PlaceholderPage title="全体タイムライン" feature="F-21 全体タイムライン（#19）" back={false} />} />
-        <Route path="home" element={<RequireAuth><PlaceholderPage title="ホーム" feature="F-20 ホームタイムライン（#18）" back={false} /></RequireAuth>} />
+        <Route index element={<TimelinePage mode="global" />} />
+        <Route path="home" element={<RequireAuth><TimelinePage mode="home" /></RequireAuth>} />
         <Route path="login" element={<GuestOnly><LoginPage /></GuestOnly>} />
         <Route path="signup" element={<GuestOnly><SignupPage /></GuestOnly>} />
-        <Route path="posts/:id" element={<PlaceholderPage title="投稿" feature="F-13 投稿詳細（#16）" />} />
+        <Route path="posts/:id" element={<PostDetailPage />} />
         <Route path="users/:handle" element={<PlaceholderPage title="プロフィール" feature="F-40 プロフィール表示（#24）" />} />
         <Route path="users/:handle/following" element={<PlaceholderPage title="フォロー中" feature="F-43 フォロー・フォロワー一覧（#27）" />} />
         <Route path="users/:handle/followers" element={<PlaceholderPage title="フォロワー" feature="F-43 フォロー・フォロワー一覧（#27）" />} />
