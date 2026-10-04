@@ -30,11 +30,13 @@ export function Layout() {
         { to: '/login', label: 'ログイン', icon: 'login' },
       ]
 
+  // 先にトップへ移る。ログイン必須の画面のままログアウトすると、RequireAuth が /login へ飛ばしてしまう
   const handleLogout = async () => {
+    navigate('/')
     try {
       await logout()
-    } finally {
-      navigate('/')
+    } catch {
+      // サーバーへの通知に失敗しても、手元のログイン状態は消えている
     }
   }
 

@@ -68,6 +68,20 @@ describe('ログイン画面', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('メールアドレスまたはパスワードが正しくありません')
   })
 
+  it('ログイン必須の画面でログアウトすると、ログイン画面ではなくトップへ移る', async () => {
+    mockApi({
+      '/api/auth/refresh': () => json(200, { accessToken: 't', tokenType: 'Bearer', expiresIn: 900, user }),
+      '/api/auth/logout': () => new Response(null, { status: 204 }),
+    })
+    renderApp('/home')
+
+    await screen.findByRole('heading', { name: 'ホーム' })
+    await userEvent.click(screen.getAllByRole('button', { name: 'ログアウト' })[0])
+
+    expect(await screen.findByRole('heading', { name: '全体タイムライン' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'ログアウト' })).not.toBeInTheDocument()
+  })
+
   it('ログイン必須の画面を開くとログイン画面へ移る', async () => {
     mockApi({})
     renderApp('/home')
