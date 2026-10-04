@@ -25,7 +25,7 @@ description: |
   - [backend/src/main/resources/application.yml](../../../backend/src/main/resources/application.yml)
     の `server.port: 8080` で固定する。同様に自動フォールバックしない。
 
-> 実装開始前のため、上記の設定ファイルはまだ存在しない。作成するときに必ずこの設定を入れること。
+> 設定ファイルを変更するときも、このポート固定（`strictPort: true` を含む）は外さないこと。
 
 ## なぜ固定するか
 
