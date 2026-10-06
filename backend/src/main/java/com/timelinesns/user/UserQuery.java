@@ -1,5 +1,6 @@
 package com.timelinesns.user;
 
+import com.timelinesns.storage.MediaUrls;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -25,7 +26,7 @@ public class UserQuery {
     private static final String ACTIVE_BY_HANDLE = "lower(u.handle) = lower(:handle) AND u.status = 'ACTIVE'";
 
     private static final String PROFILE = """
-            SELECT u.id, u.handle, u.display_name, u.bio, u.created_at,
+            SELECT u.id, u.handle, u.display_name, u.bio, u.avatar_key, u.created_at,
                    (SELECT count(*) FROM posts p WHERE p.user_id = u.id) AS post_count,
                    (SELECT count(*) FROM follows f JOIN users t ON t.id = f.followee_id
                     WHERE f.follower_id = u.id AND t.status = 'ACTIVE') AS following_count,
@@ -55,7 +56,7 @@ public class UserQuery {
     // 凍結されたユーザーと、閲覧者とブロック関係にあるユーザーは並べない。
     // 並びはフォローした日時の新しい順。cursor は前のページの最後のユーザーで、その行のフォロー日時より前から続ける
     private static final String FOLLOW_LIST = """
-            SELECT u.id, u.handle, u.display_name, u.bio,
+            SELECT u.id, u.handle, u.display_name, u.bio, u.avatar_key,
                    EXISTS (SELECT 1 FROM follows v
                            WHERE v.follower_id = :viewer AND v.followee_id = u.id) AS following,
                    EXISTS (SELECT 1 FROM follows v
@@ -80,13 +81,15 @@ public class UserQuery {
             LIMIT :limit""";
 
     private final NamedParameterJdbcTemplate jdbc;
+    private final MediaUrls mediaUrls;
 
-    public UserQuery(NamedParameterJdbcTemplate jdbc) {
+    public UserQuery(NamedParameterJdbcTemplate jdbc, MediaUrls mediaUrls) {
+        this.mediaUrls = mediaUrls;
         this.jdbc = jdbc;
     }
 
     public Optional<ProfileResponse> findProfile(String handle, @Nullable UUID viewer) {
-        return jdbc.query(PROFILE, params(viewer).addValue("handle", handle), UserQuery::toProfile)
+        return jdbc.query(PROFILE, params(viewer).addValue("handle", handle), this::toProfile)
                 .stream().findFirst();
     }
 
@@ -113,7 +116,7 @@ public class UserQuery {
         if (cursor != null) {
             params.addValue("cursor", cursor);
         }
-        return jdbc.query(sql, params, UserQuery::toSummary);
+        return jdbc.query(sql, params, this::toSummary);
     }
 
     // NULL のときも PostgreSQL が型を決められるよう、型を明示して渡す
@@ -121,12 +124,13 @@ public class UserQuery {
         return new MapSqlParameterSource().addValue("viewer", viewer, Types.OTHER);
     }
 
-    private static ProfileResponse toProfile(ResultSet rs, int rowNum) throws SQLException {
+    private ProfileResponse toProfile(ResultSet rs, int rowNum) throws SQLException {
         return new ProfileResponse(
                 rs.getObject("id", UUID.class),
                 rs.getString("handle"),
                 rs.getString("display_name"),
                 rs.getString("bio"),
+                mediaUrls.url(rs.getString("avatar_key")),
                 rs.getTimestamp("created_at").toInstant(),
                 rs.getLong("post_count"),
                 rs.getLong("following_count"),
@@ -137,12 +141,13 @@ public class UserQuery {
                 rs.getBoolean("blocked_by"));
     }
 
-    private static UserSummaryResponse toSummary(ResultSet rs, int rowNum) throws SQLException {
+    private UserSummaryResponse toSummary(ResultSet rs, int rowNum) throws SQLException {
         return new UserSummaryResponse(
                 rs.getObject("id", UUID.class),
                 rs.getString("handle"),
                 rs.getString("display_name"),
                 rs.getString("bio"),
+                mediaUrls.url(rs.getString("avatar_key")),
                 rs.getBoolean("following"),
                 rs.getBoolean("followed_by"));
     }

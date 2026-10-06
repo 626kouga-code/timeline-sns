@@ -1,6 +1,5 @@
-# ローカル開発用のサービス。本番（AWS）では RDS・SES に置き換わる。
+# ローカル開発用のサービス。本番（AWS）では RDS・S3・SES に置き換わる。
 # 値はローカル専用の固定値なので、本番の設定には使わないこと。
-# S3 互換ストレージは、MinIO のイメージが配布されなくなったため未導入（選定は別 Issue で行う）。
 name: timeline-sns
 
 services:
@@ -22,6 +21,21 @@ services:
       timeout: 5s
       retries: 10
 
+  # 画像の保存先（S3 互換）。エンドポイントは http://localhost:9090、認証情報は何でも通る。
+  # MinIO のイメージが配布されなくなったため Adobe S3Mock を使う（#40）。バケットは起動時に作る
+  s3mock:
+    image: adobe/s3mock:5.2
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: timeline-media
+      # 名前付きボリュームに保存し、コンテナを作り直しても画像を残す。
+      # イメージが非 root ユーザーで動くため、保存先は書き込み権限のある /s3mockroot にする
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /s3mockroot
+      COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: "true"
+    ports:
+      - "9090:9090"
+    volumes:
+      - s3mock-data:/s3mockroot
+
   # 送信メールの確認用。受信箱は http://localhost:8025、SMTP は localhost:1025
   mailpit:
     image: axllent/mailpit
@@ -36,3 +50,4 @@ services:
 
 volumes:
   postgres-data:
+  s3mock-data:

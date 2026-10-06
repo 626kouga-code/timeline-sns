@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
@@ -80,6 +82,24 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             MissingServletRequestParameterException ex, HttpHeaders headers, HttpStatusCode status,
             WebRequest request) {
         return badParameter(ex, ex.getParameterName(), "値を指定してください", headers, request);
+    }
+
+    @Override
+    protected @Nullable ResponseEntity<Object> handleMissingServletRequestPart(
+            MissingServletRequestPartException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        return badParameter(ex, ex.getRequestPartName(), "ファイルを選んでください", headers, request);
+    }
+
+    /**
+     * アップロードが上限（application.yml の spring.servlet.multipart）を超えた。
+     * 画像の処理で上限を超えたときと同じ形（400 IMAGE_TOO_LARGE）にそろえる。
+     */
+    @Override
+    protected @Nullable ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "画像は 5MB 以内にしてください");
+        problem.setProperty("code", "IMAGE_TOO_LARGE");
+        return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
     }
 
     private @Nullable ResponseEntity<Object> badParameter(Exception ex, @Nullable String name, String message,

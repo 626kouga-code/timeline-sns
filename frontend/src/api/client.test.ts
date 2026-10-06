@@ -8,6 +8,7 @@ const user = {
   handle: 'taro',
   displayName: '太郎',
   bio: null,
+  avatarUrl: null,
   role: 'USER',
   emailVerified: false,
 } as const

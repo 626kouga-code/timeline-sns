@@ -1,5 +1,6 @@
 package com.timelinesns.post;
 
+import com.timelinesns.storage.MediaUrls;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -29,7 +30,7 @@ public class PostQuery {
     static final int MAX_NEW_COUNT = 100;
 
     private static final String SELECT = """
-            SELECT p.id, p.body, p.created_at, u.id AS author_id, u.handle, u.display_name,
+            SELECT p.id, p.body, p.created_at, u.id AS author_id, u.handle, u.display_name, u.avatar_key,
                    (SELECT count(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
                    (SELECT count(*) FROM comments c WHERE c.post_id = p.id AND c.deleted_at IS NULL) AS comment_count,
                    EXISTS (SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = :viewer) AS liked
@@ -53,14 +54,16 @@ public class PostQuery {
             """;
 
     private final NamedParameterJdbcTemplate jdbc;
+    private final MediaUrls mediaUrls;
 
-    public PostQuery(NamedParameterJdbcTemplate jdbc) {
+    public PostQuery(NamedParameterJdbcTemplate jdbc, MediaUrls mediaUrls) {
+        this.mediaUrls = mediaUrls;
         this.jdbc = jdbc;
     }
 
     public Optional<PostResponse> findVisible(UUID postId, @Nullable UUID viewer) {
         String sql = SELECT + FROM_VISIBLE + "  AND p.id = :postId";
-        List<PostResponse> found = jdbc.query(sql, params(viewer).addValue("postId", postId), PostQuery::toResponse);
+        List<PostResponse> found = jdbc.query(sql, params(viewer).addValue("postId", postId), this::toResponse);
         return found.stream().findFirst();
     }
 
@@ -88,7 +91,7 @@ public class PostQuery {
             params.addValue("cursor", cursor);
         }
         sql.append("ORDER BY p.id DESC\nLIMIT :limit");
-        return jdbc.query(sql.toString(), params, PostQuery::toResponse);
+        return jdbc.query(sql.toString(), params, this::toResponse);
     }
 
     /**
@@ -114,7 +117,7 @@ public class PostQuery {
         return new MapSqlParameterSource().addValue("viewer", viewer, Types.OTHER);
     }
 
-    private static PostResponse toResponse(ResultSet rs, int rowNum) throws SQLException {
+    private PostResponse toResponse(ResultSet rs, int rowNum) throws SQLException {
         return new PostResponse(
                 rs.getObject("id", UUID.class),
                 rs.getString("body"),
@@ -122,7 +125,8 @@ public class PostQuery {
                 new PostResponse.Author(
                         rs.getObject("author_id", UUID.class),
                         rs.getString("handle"),
-                        rs.getString("display_name")),
+                        rs.getString("display_name"),
+                        mediaUrls.url(rs.getString("avatar_key"))),
                 rs.getLong("like_count"),
                 rs.getLong("comment_count"),
                 rs.getBoolean("liked"));

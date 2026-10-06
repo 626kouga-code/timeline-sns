@@ -42,7 +42,7 @@ MVP（最初の公開版）で実装する機能です。詳細と優先度は[�
 | フロントエンド | React 19 + TypeScript + Vite、Tailwind CSS、TanStack Query（サーバーデータの取得とキャッシュ）、React Router |
 | バックエンド | Java 25 + Spring Boot 4.1（Gradle）、Spring Security（JWT認証・Googleログイン）、Spring Data JPA、Flyway |
 | データベース | PostgreSQL 18 |
-| 画像保存 | AWS S3（ローカル開発ではS3互換のMinIO） |
+| 画像保存 | AWS S3（ローカル開発・テストではS3互換のS3Mock） |
 | メール送信 | AWS SES（ローカル開発ではMailpit） |
 | 認証方式 | アクセストークン（JWT、15分）はフロントのメモリに保持し、リフレッシュトークン（14日）はHttpOnly Cookieで扱う |
 | インフラ | AWS（構成は検討中。[未決事項](./docs/11_open-issues.md)を参照） |
@@ -53,7 +53,7 @@ MVP（最初の公開版）で実装する機能です。詳細と優先度は[�
 
 - Node.js 24（フロントエンド）
 - Java 17以上（Gradleの実行用）。バックエンドのビルドに使うJava 25は、Gradleのtoolchain機能で自動ダウンロードされる。Gradleは同梱のGradle Wrapperを使う
-- Docker / Docker Compose（PostgreSQL・MinIO・Mailpit用）
+- Docker / Docker Compose（PostgreSQL・S3Mock・Mailpit用）
 
 ### 1. ローカル用サービスの起動
 
@@ -66,9 +66,10 @@ docker compose up -d
 | サービス | 用途 | ホスト側のポート |
 | --- | --- | --- |
 | PostgreSQL 18 | データベース（DB・ユーザー・パスワードはすべて `timeline`） | `5433` |
+| S3Mock | 画像の保存先（S3互換。バケット `timeline-media` を起動時に作成） | `9090` |
 | Mailpit | 確認メール・パスワードリセットメールの受信確認（受信箱は http://localhost:8025） | `1025`（SMTP）、`8025`（Web UI） |
 
-PostgreSQL は、他のプロジェクトでよく使われる `5432` と衝突しないよう `5433` にしています。投稿画像の保存先（S3互換ストレージ）は、MinIO のイメージが配布されなくなったため未導入です（選定は別Issueで行います）。
+PostgreSQL は、他のプロジェクトでよく使われる `5432` と衝突しないよう `5433` にしています。画像の保存先は、MinIO のイメージが配布されなくなったため Adobe の S3Mock を使っています（#40）。
 
 ### 2. バックエンド起動
 
@@ -119,7 +120,7 @@ npm test
 ├── docs/                  # 要件定義書（11分割）
 ├── .claude/skills/        # Claude Code用のスキル（ポート固定ルール・品質チェック手順）
 ├── .github/workflows/     # CI/CD（GitHub Actions）
-└── docker-compose.yml     # PostgreSQL・MinIO・Mailpit起動用（ローカル開発用）
+└── docker-compose.yml     # PostgreSQL・S3Mock・Mailpit起動用（ローカル開発用）
 ```
 
 ## 開発の進め方

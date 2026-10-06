@@ -50,7 +50,19 @@ export interface ProfileInput {
   bio: string
 }
 
-/** プロフィール編集（F-41）。変更後の本人の情報を返す。アイコン画像は #40 の後で追加する */
+/** プロフィール編集（F-41）。表示名・自己紹介を変更し、変更後の本人の情報を返す */
 export function updateMe(input: ProfileInput): Promise<Me> {
   return apiFetch<Me>('/api/me', { method: 'PATCH', body: input })
+}
+
+/** アイコン画像の変更（F-41）。画面で正方形に切り抜いた画像を送る。サーバーで 400×400 に作り直される */
+export function uploadAvatar(image: Blob): Promise<Me> {
+  const form = new FormData()
+  form.append('file', image, 'avatar')
+  return apiFetch<Me>('/api/me/avatar', { method: 'PUT', body: form })
+}
+
+/** アイコン画像の削除（F-41）。頭文字のアイコンに戻る */
+export function deleteAvatar(): Promise<Me> {
+  return apiFetch<Me>('/api/me/avatar', { method: 'DELETE' })
 }

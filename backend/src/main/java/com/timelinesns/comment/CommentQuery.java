@@ -1,6 +1,7 @@
 package com.timelinesns.comment;
 
 import com.timelinesns.post.PostResponse;
+import com.timelinesns.storage.MediaUrls;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -25,6 +26,7 @@ public class CommentQuery {
     // 退会したユーザー（user_id が NULL）のコメントは hidden ではなく削除済みとして扱う
     private static final String SELECT = """
             SELECT c.id, c.post_id, c.parent_id, c.body, c.created_at, c.user_id, u.handle, u.display_name,
+                   u.avatar_key,
                    (c.deleted_at IS NOT NULL OR c.user_id IS NULL) AS removed,
                    coalesce(u.status <> 'ACTIVE', false)
                        OR EXISTS (
@@ -36,8 +38,10 @@ public class CommentQuery {
             """;
 
     private final NamedParameterJdbcTemplate jdbc;
+    private final MediaUrls mediaUrls;
 
-    public CommentQuery(NamedParameterJdbcTemplate jdbc) {
+    public CommentQuery(NamedParameterJdbcTemplate jdbc, MediaUrls mediaUrls) {
+        this.mediaUrls = mediaUrls;
         this.jdbc = jdbc;
     }
 
@@ -46,11 +50,11 @@ public class CommentQuery {
      */
     public List<Row> findByPost(UUID postId, @Nullable UUID viewer) {
         return jdbc.query(SELECT + "WHERE c.post_id = :postId\nORDER BY c.created_at, c.id",
-                params(viewer).addValue("postId", postId), CommentQuery::toRow);
+                params(viewer).addValue("postId", postId), this::toRow);
     }
 
     public Optional<Row> findById(UUID commentId, @Nullable UUID viewer) {
-        return jdbc.query(SELECT + "WHERE c.id = :id", params(viewer).addValue("id", commentId), CommentQuery::toRow)
+        return jdbc.query(SELECT + "WHERE c.id = :id", params(viewer).addValue("id", commentId), this::toRow)
                 .stream().findFirst();
     }
 
@@ -125,11 +129,12 @@ public class CommentQuery {
         return new MapSqlParameterSource().addValue("viewer", viewer, Types.OTHER);
     }
 
-    private static Row toRow(ResultSet rs, int rowNum) throws SQLException {
+    private Row toRow(ResultSet rs, int rowNum) throws SQLException {
         UUID userId = rs.getObject("user_id", UUID.class);
         PostResponse.Author author = userId == null
                 ? null
-                : new PostResponse.Author(userId, rs.getString("handle"), rs.getString("display_name"));
+                : new PostResponse.Author(userId, rs.getString("handle"), rs.getString("display_name"),
+                        mediaUrls.url(rs.getString("avatar_key")));
         return new Row(
                 rs.getObject("id", UUID.class),
                 rs.getObject("post_id", UUID.class),

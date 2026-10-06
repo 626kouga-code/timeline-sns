@@ -11,6 +11,7 @@ export const user: Me = {
   handle: 'taro',
   displayName: '太郎',
   bio: null,
+  avatarUrl: null,
   role: 'USER',
   emailVerified: false,
 }
@@ -25,12 +26,16 @@ export const session = () => json(200, { accessToken: 't', tokenType: 'Bearer', 
 
 export const page = <T,>(items: T[], nextCursor: string | null = null) => json(200, { items, nextCursor })
 
-export function post(id: string, body: string, author: Pick<Me, 'id' | 'handle' | 'displayName'> = user): Post {
+export function post(
+  id: string,
+  body: string,
+  author: Pick<Me, 'id' | 'handle' | 'displayName'> & { avatarUrl?: string | null } = user,
+): Post {
   return {
     id,
     body,
     createdAt: new Date().toISOString(),
-    author: { id: author.id, handle: author.handle, displayName: author.displayName },
+    author: { id: author.id, handle: author.handle, displayName: author.displayName, avatarUrl: author.avatarUrl ?? null },
     likeCount: 0,
     commentCount: 0,
     liked: false,

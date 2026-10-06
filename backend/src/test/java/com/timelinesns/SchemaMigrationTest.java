@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.timelinesns.support.IntegrationTest;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,6 +24,12 @@ class SchemaMigrationTest {
 
     @Autowired
     private JdbcTemplate jdbc;
+
+    // 他の結合テストが残したデータと衝突しないよう、空の状態から始める（テストのトランザクション内なので最後に戻る）
+    @BeforeEach
+    void setUp() {
+        jdbc.execute("TRUNCATE users CASCADE");
+    }
 
     @Test
     void createsAllTables() {

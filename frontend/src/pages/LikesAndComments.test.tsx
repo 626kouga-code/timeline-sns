@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { Comment } from '../api/types'
 import { json, mockApi, page, post, renderApp, session, user } from '../test/utils'
 
-const hanako = { id: 'u2', handle: 'hanako', displayName: '花子' }
+const hanako = { id: 'u2', handle: 'hanako', displayName: '花子', avatarUrl: null }
 
 function comment(id: string, parentId: string | null, author: Comment['author'] = hanako): Comment {
   return { id, parentId, body: `本文 ${id}`, createdAt: new Date().toISOString(), author, deleted: false }
@@ -74,7 +74,7 @@ describe('コメント', () => {
       '/api/posts/p1/comments': () =>
         json(200, [
           comment('c1', null),
-          comment('c2', 'c1', { id: 'u3', handle: 'jiro', displayName: '次郎' }),
+          comment('c2', 'c1', { id: 'u3', handle: 'jiro', displayName: '次郎', avatarUrl: null }),
           comment('c3', 'c2'),
           { ...comment('c4', null), body: null, author: null, deleted: true },
           comment('c5', 'c4'),

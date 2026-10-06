@@ -13,6 +13,11 @@ spring:
     open-in-view: false
   flyway:
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      # 画像は 1 枚 5MB まで（docs/02 F-11）。リクエスト全体は投稿の画像 4 枚分に余裕を持たせる
+      max-file-size: 5MB
+      max-request-size: 25MB
 
 server:
   # ポートは固定。埋まっていても別ポートには移らない（.claude/skills/dev-server-ports）
@@ -26,3 +31,10 @@ app:
     refresh-token-ttl: 14d
     # リフレッシュトークンの Cookie に Secure を付けるか。localhost は HTTP でも Secure Cookie を受け付ける
     cookie-secure: true
+  storage:
+    bucket: ${STORAGE_BUCKET:timeline-media}
+    region: ${AWS_REGION:ap-northeast-1}
+    # 既定はローカルの docker-compose の S3Mock。本番（AWS S3）では空にする
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9090}
+    # 画像の URL の先頭。本番で CloudFront から配信するときは、その URL に変える
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL:/api/media}
