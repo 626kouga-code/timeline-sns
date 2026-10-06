@@ -2,12 +2,14 @@ package com.timelinesns.user;
 
 import java.time.Instant;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 
 /**
  * プロフィール（F-40）。本人以外にも返すので email は含まない。
  * フォロー数・フォロワー数には凍結されたユーザーを数えない。
  *
  * @param postCount  投稿数
+ * @param avatarUrl  アイコン画像の URL。未設定なら null
  * @param following  閲覧者がこのユーザーをフォローしているか（ゲストは常に false。以下も同じ）
  * @param followedBy このユーザーが閲覧者をフォローしているか
  * @param blocking   閲覧者がこのユーザーをブロックしているか
@@ -18,6 +20,7 @@ public record ProfileResponse(
         String handle,
         String displayName,
         String bio,
+        @Nullable String avatarUrl,
         Instant createdAt,
         long postCount,
         long followingCount,

@@ -35,7 +35,7 @@ cd backend
 
 - Checkstyle：コーディング規約のチェック（設定は `backend/config/checkstyle/checkstyle.xml`）
 - SpotBugs：バグになりやすいコードの検出（除外設定は `backend/config/spotbugs/exclude.xml`）
-- テスト：JUnit 5 + Testcontainers。PostgreSQL・MinIO をコンテナで起動するため、**Docker が起動している必要がある**
+- テスト：JUnit 5 + Testcontainers。PostgreSQL・S3Mock をコンテナで起動するため、**Docker が起動している必要がある**
 
 違反やテスト失敗があるとビルド自体が失敗するように設定する（`ignoreFailures = false`）。
 

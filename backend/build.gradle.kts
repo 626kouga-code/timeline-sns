@@ -27,6 +27,12 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.flywaydb:flyway-database-postgresql")
+    // 画像の保存先（本番は S3、ローカル・テストは S3 互換の S3Mock）
+    implementation(platform("software.amazon.awssdk:bom:2.55.11"))
+    implementation("software.amazon.awssdk:s3")
+    // 画像処理。ImageIO に WebP の読み込みを足し、Exif の向き（Orientation）を読む
+    implementation("com.twelvemonkeys.imageio:imageio-webp:3.15.2")
+    implementation("com.drewnoakes:metadata-extractor:2.21.0")
     runtimeOnly("org.postgresql:postgresql")
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.10.4")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
@@ -38,6 +44,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
+    testImplementation("com.adobe.testing:s3mock-testcontainers:5.2.3")
     // テストで実行 SQL を数え、N+1 が起きていないことを確かめる（support/QueryCounter）
     testImplementation("net.ttddyy:datasource-proxy:1.10.1")
     testCompileOnly("com.github.spotbugs:spotbugs-annotations:4.10.4")

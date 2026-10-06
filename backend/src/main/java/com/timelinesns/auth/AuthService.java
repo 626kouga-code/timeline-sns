@@ -1,6 +1,7 @@
 package com.timelinesns.auth;
 
 import com.timelinesns.common.ApiException;
+import com.timelinesns.storage.MediaUrls;
 import com.timelinesns.user.MeResponse;
 import com.timelinesns.user.User;
 import com.timelinesns.user.UserRepository;
@@ -24,14 +25,16 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AccessTokenService accessTokens;
     private final RefreshTokenService refreshTokens;
+    private final MediaUrls mediaUrls;
     private final Clock clock;
 
     // 存在しないメールアドレスでも照合と同程度の時間をかけ、応答時間から登録の有無を推測されにくくする
     private final String dummyPasswordHash;
 
     public AuthService(UserRepository users, PasswordEncoder passwordEncoder, AccessTokenService accessTokens,
-            RefreshTokenService refreshTokens, Clock clock) {
+            RefreshTokenService refreshTokens, MediaUrls mediaUrls, Clock clock) {
         this.users = users;
+        this.mediaUrls = mediaUrls;
         this.passwordEncoder = passwordEncoder;
         this.accessTokens = accessTokens;
         this.refreshTokens = refreshTokens;
@@ -99,7 +102,7 @@ public class AuthService {
 
     private AuthResponse response(User user) {
         return new AuthResponse(accessTokens.issue(user), "Bearer", accessTokens.expiresInSeconds(),
-                MeResponse.from(user));
+                MeResponse.from(user, mediaUrls));
     }
 
     // BCrypt は先頭 72 バイトしか使わない（超えると Spring Security は例外にする）。文字数ではなくバイト数で確認する

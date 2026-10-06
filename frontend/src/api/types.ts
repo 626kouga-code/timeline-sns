@@ -9,6 +9,8 @@ export interface Me {
   handle: string
   displayName: string
   bio: string | null
+  /** アイコン画像の URL。未設定なら null */
+  avatarUrl: string | null
   role: Role
   emailVerified: boolean
 }
@@ -26,6 +28,8 @@ export interface PostAuthor {
   id: string
   handle: string
   displayName: string
+  /** アイコン画像の URL。未設定なら null */
+  avatarUrl: string | null
 }
 
 /** 投稿（PostResponse）。画像は #14 で追加する */
@@ -74,6 +78,7 @@ export interface Profile {
   handle: string
   displayName: string
   bio: string
+  avatarUrl: string | null
   /** ISO 8601 */
   createdAt: string
   postCount: number
@@ -96,6 +101,7 @@ export interface UserSummary {
   handle: string
   displayName: string
   bio: string
+  avatarUrl: string | null
   following: boolean
   followedBy: boolean
 }

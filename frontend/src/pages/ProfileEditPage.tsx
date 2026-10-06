@@ -1,18 +1,24 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ApiError } from '../api/client'
 import { timelineKeys } from '../api/timeline'
-import { updateMe, userKeys, type ProfileInput } from '../api/users'
+import type { Me } from '../api/types'
+import { deleteAvatar, updateMe, uploadAvatar, userKeys, type ProfileInput } from '../api/users'
 import { useAuth } from '../auth/context'
 import { Avatar } from '../components/Avatar'
+import { AvatarCropper } from '../components/AvatarCropper'
+import { Icon } from '../components/Icon'
 import { PageHeader } from '../components/PageHeader'
 import { useToast } from '../components/toast'
 
 const MAX_NAME = 50
 const MAX_BIO = 160
+// サーバーと同じ条件（形式はサーバーでファイルの中身からも確認する）
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
-// プロフィール編集（F-41, `/settings/profile`）。アイコン画像は画像の保存先（#40）が決まってから追加する
+// プロフィール編集（F-41, `/settings/profile`）
 export function ProfileEditPage() {
   const { me, setMe } = useAuth()
   const navigate = useNavigate()
@@ -21,19 +27,38 @@ export function ProfileEditPage() {
   const [displayName, setDisplayName] = useState(me?.displayName ?? '')
   const [bio, setBio] = useState(me?.bio ?? '')
 
+  const fileInput = useRef<HTMLInputElement>(null)
+  const [cropping, setCropping] = useState<File | null>(null)
+
+  // 表示名・アイコンは投稿・コメント・一覧にも出ているので、まとめて取り直す
+  const refreshEverywhere = (updated: Me) => {
+    setMe(updated)
+    void queryClient.invalidateQueries({ queryKey: userKeys.all })
+    void queryClient.invalidateQueries({ queryKey: timelineKeys.all })
+    void queryClient.invalidateQueries({ queryKey: ['post'] })
+    void queryClient.invalidateQueries({ queryKey: ['comments'] })
+  }
+
   const mutation = useMutation({
     mutationFn: (input: ProfileInput) => updateMe(input),
     onSuccess: (updated) => {
-      setMe(updated)
-      // 表示名は投稿・コメント・一覧にも出ているので、まとめて取り直す
-      void queryClient.invalidateQueries({ queryKey: userKeys.all })
-      void queryClient.invalidateQueries({ queryKey: timelineKeys.all })
-      void queryClient.invalidateQueries({ queryKey: ['post'] })
-      void queryClient.invalidateQueries({ queryKey: ['comments'] })
+      refreshEverywhere(updated)
       showToast('プロフィールを更新しました')
       navigate(`/users/${updated.handle}`)
     },
   })
+
+  // アイコンはその場で保存する（表示名・自己紹介の「保存する」とは別）。失敗したら切り抜き画面にメッセージを出す
+  const saveAvatar = (updated: Me, message: string) => {
+    refreshEverywhere(updated)
+    showToast(message)
+  }
+  const removeAvatar = useMutation({
+    mutationFn: deleteAvatar,
+    onSuccess: (updated) => saveAvatar(updated, 'アイコン画像を削除しました'),
+    onError: (error) => showToast(error instanceof ApiError ? error.message : 'アイコン画像を削除できませんでした'),
+  })
+  const avatarBusy = cropping !== null || removeAvatar.isPending
 
   if (!me) return null
 
@@ -55,9 +80,59 @@ export function ProfileEditPage() {
         }}
       >
         <div className="flex items-center gap-4">
-          <Avatar user={{ id: me.id, displayName: displayName.trim() || me.displayName }} size="lg" />
-          <p className="text-sm text-slate-500">アイコン画像の変更は準備中です。</p>
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            disabled={avatarBusy}
+            className="group relative rounded-full"
+            aria-label="アイコン画像を変更"
+          >
+            <Avatar user={{ ...me, displayName: displayName.trim() || me.displayName }} size="lg" />
+            <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition group-hover:opacity-100">
+              <Icon name="image" className="size-7" />
+            </span>
+          </button>
+          <div className="text-sm text-slate-500">
+            <p>アイコンをクリックして画像を選択（JPEG・PNG・WebP・GIF、5MB まで）</p>
+            {me.avatarUrl && (
+              <button
+                type="button"
+                onClick={() => removeAvatar.mutate()}
+                disabled={avatarBusy}
+                className="mt-1 text-red-600 hover:underline disabled:opacity-40"
+              >
+                画像を削除
+              </button>
+            )}
+          </div>
+          <input
+            ref={fileInput}
+            type="file"
+            accept={IMAGE_TYPES.join(',')}
+            hidden
+            data-testid="avatar-input"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              // 同じファイルを選び直しても onChange が呼ばれるよう、選択を空に戻す
+              e.target.value = ''
+              if (!file) return
+              if (!IMAGE_TYPES.includes(file.type)) showToast('JPEG・PNG・WebP・GIF の画像を選んでください')
+              else if (file.size > MAX_IMAGE_BYTES) showToast('画像は 5MB 以内にしてください')
+              else setCropping(file)
+            }}
+          />
         </div>
+
+        {cropping && (
+          <AvatarCropper
+            file={cropping}
+            onClose={() => setCropping(null)}
+            onApply={async (image) => {
+              saveAvatar(await uploadAvatar(image), 'アイコン画像を変更しました')
+              setCropping(null)
+            }}
+          />
+        )}
 
         <label className="block">
           <span className="flex justify-between text-sm font-semibold">

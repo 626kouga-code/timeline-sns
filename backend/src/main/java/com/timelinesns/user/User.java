@@ -40,6 +40,9 @@ public class User {
     @Column(nullable = false)
     private String bio = "";
 
+    // アイコン画像の保存先のキー（ObjectStorage）。未設定なら null
+    private String avatarKey;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.USER;
@@ -77,6 +80,19 @@ public class User {
     public void updateProfile(String displayName, String bio) {
         this.displayName = displayName.strip();
         this.bio = bio.strip();
+    }
+
+    /**
+     * アイコン画像を差し替える（null なら削除）。戻り値は差し替える前のキーで、保存先から消すのに使う。
+     */
+    public String changeAvatar(String newKey) {
+        String old = avatarKey;
+        avatarKey = newKey;
+        return old;
+    }
+
+    public String getAvatarKey() {
+        return avatarKey;
     }
 
     public boolean isSuspended() {

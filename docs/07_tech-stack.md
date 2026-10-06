@@ -33,12 +33,12 @@ SNSアプリ/
 ├── frontend/            # React + Vite
 ├── backend/             # Spring Boot
 ├── docs/                # 要件定義書などの設計資料
-├── docker-compose.yml   # ローカル用の PostgreSQL・MinIO・Mailpit
+├── docker-compose.yml   # ローカル用の PostgreSQL・S3Mock・Mailpit
 └── .github/workflows/   # CI/CD
 ```
 
 - ローカルでは Docker Compose で次のサービスを起動する
   - PostgreSQL
-  - MinIO：S3 互換のストレージ
+  - S3Mock（Adobe）：S3 互換のストレージ。画像を保存する。MinIO のイメージが配布されなくなったため、こちらを使う
   - Mailpit：送信メールを確認するためのテスト用メールサーバー
-- 本番との違い（S3 / MinIO、SES / Mailpit）は Spring のプロファイルで切り替える
+- 本番との違い（S3 / S3Mock、SES / Mailpit）は設定（環境変数）で切り替える。S3 は `app.storage.endpoint` を空にすると AWS の S3 につながる

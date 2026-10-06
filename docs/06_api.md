@@ -25,7 +25,9 @@ REST（JSON）で提供する。一覧は `?cursor=<最後のid>&limit=20` の�
 | | `GET /api/users/{handle}/following` `GET /api/users/{handle}/followers` | フォロー・フォロワー一覧（フォローした日時の新しい順。凍結ユーザーと、閲覧者とブロック関係にあるユーザーは除く） |
 | | `PUT /api/users/{handle}/follow` `DELETE /api/users/{handle}/follow` | フォロー・解除（冪等。応答は `{ following, followerCount }`。自分自身は 400、ブロック関係にある相手は 403） |
 | | `PUT /api/users/{handle}/block` `DELETE /api/users/{handle}/block` | ブロック・解除 |
-| | `GET /api/me` `PATCH /api/me` `DELETE /api/me` | 自分の情報取得・更新（`{ displayName, bio }` を両方送る。アイコン画像は #40 の後で追加）・退会 |
+| | `GET /api/me` `PATCH /api/me` `DELETE /api/me` | 自分の情報取得・更新（`{ displayName, bio }` を両方送る）・退会 |
+| | `PUT /api/me/avatar`（multipart の `file`） `DELETE /api/me/avatar` | アイコン画像の変更・削除。画面で正方形に切り抜いて送る。サーバーで中身から形式を判定し（JPEG / PNG / WebP / GIF、5MB まで）、Exif を除いて 400×400 に作り直す。応答は更新後の自分の情報 |
+| 画像 | `GET /api/media/{key}` | 保存した画像の配信（ゲスト可。キーは保存のたびに変わるので長期キャッシュ）。各応答の `avatarUrl` はこの URL（本番で CloudFront から配信するときは設定で切り替える） |
 | 通知 | `GET /api/notifications` `GET /api/notifications/unread-count` `POST /api/notifications/read` | 一覧・未読数・既読化 |
 | 通報 | `POST /api/reports` | 通報 |
 | 管理 | `GET /api/admin/reports` `PATCH /api/admin/reports/{id}` | 通報一覧・対応状況の更新 |

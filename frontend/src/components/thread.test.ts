@@ -7,7 +7,7 @@ const comment = (id: string, parentId: string | null): Comment => ({
   parentId,
   body: id,
   createdAt: '2026-10-05T00:00:00Z',
-  author: { id: 'u1', handle: 'taro', displayName: '太郎' },
+  author: { id: 'u1', handle: 'taro', displayName: '太郎', avatarUrl: null },
   deleted: false,
 })
 

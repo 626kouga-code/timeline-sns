@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { Profile, UserSummary } from '../api/types'
 import { json, mockApi, page, post, renderApp, session, user } from '../test/utils'
 
-const hanako = { id: 'u2', handle: 'hanako', displayName: '花子' }
+const hanako = { id: 'u2', handle: 'hanako', displayName: '花子', avatarUrl: null }
 
 function profile(overrides: Partial<Profile> = {}): Profile {
   return {
@@ -23,7 +23,16 @@ function profile(overrides: Partial<Profile> = {}): Profile {
 }
 
 function summary(id: string, handle: string, overrides: Partial<UserSummary> = {}): UserSummary {
-  return { id, handle, displayName: handle.toUpperCase(), bio: '', following: false, followedBy: false, ...overrides }
+  return {
+    id,
+    handle,
+    displayName: handle.toUpperCase(),
+    bio: '',
+    avatarUrl: null,
+    following: false,
+    followedBy: false,
+    ...overrides,
+  }
 }
 
 const notFound = () => json(404, { code: 'USER_NOT_FOUND', detail: 'このユーザーは存在しないか、表示できません' })
