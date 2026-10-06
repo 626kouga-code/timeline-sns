@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * 結合テスト用のデータを DB に直接入れる。まだ API が無い関係（フォロー・ブロック・凍結）もここで作る。
+ * 結合テスト用のデータを DB に直接入れる。まだ API が無い関係（ブロック・凍結）や、前提として作るフォローもここで作る。
  */
 public class Fixtures {
 

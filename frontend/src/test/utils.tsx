@@ -23,7 +23,7 @@ export const noSession = () => json(401, { code: 'INVALID_REFRESH_TOKEN', detail
 /** 起動時のリフレッシュでログイン状態にする応答 */
 export const session = () => json(200, { accessToken: 't', tokenType: 'Bearer', expiresIn: 900, user })
 
-export const page = (items: Post[], nextCursor: string | null = null) => json(200, { items, nextCursor })
+export const page = <T,>(items: T[], nextCursor: string | null = null) => json(200, { items, nextCursor })
 
 export function post(id: string, body: string, author: Pick<Me, 'id' | 'handle' | 'displayName'> = user): Post {
   return {

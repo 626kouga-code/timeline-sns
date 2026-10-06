@@ -67,3 +67,41 @@ export interface LikeState {
   liked: boolean
   likeCount: number
 }
+
+/** プロフィール（ProfileResponse）。関係を表す項目はゲストなら常に false */
+export interface Profile {
+  id: string
+  handle: string
+  displayName: string
+  bio: string
+  /** ISO 8601 */
+  createdAt: string
+  postCount: number
+  /** 凍結されたユーザーは数えない（フォロワー数も同じ） */
+  followingCount: number
+  followerCount: number
+  /** 閲覧者がこのユーザーをフォローしている */
+  following: boolean
+  /** このユーザーが閲覧者をフォローしている */
+  followedBy: boolean
+  /** 閲覧者がこのユーザーをブロックしている */
+  blocking: boolean
+  /** このユーザーが閲覧者をブロックしている */
+  blockedBy: boolean
+}
+
+/** ユーザー一覧の 1 件（UserSummaryResponse） */
+export interface UserSummary {
+  id: string
+  handle: string
+  displayName: string
+  bio: string
+  following: boolean
+  followedBy: boolean
+}
+
+/** フォロー・解除の応答（FollowResponse） */
+export interface FollowState {
+  following: boolean
+  followerCount: number
+}

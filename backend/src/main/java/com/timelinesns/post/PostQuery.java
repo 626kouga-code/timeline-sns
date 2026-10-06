@@ -69,8 +69,20 @@ public class PostQuery {
      * 次のページがあるか判定できるよう、呼び出し側は limit + 1 件を要求する。
      */
     public List<PostResponse> timeline(Timeline timeline, @Nullable UUID viewer, @Nullable UUID cursor, int limit) {
-        StringBuilder sql = new StringBuilder(SELECT).append(FROM_VISIBLE).append(filter(timeline));
-        MapSqlParameterSource params = params(viewer).addValue("limit", limit);
+        return page(filter(timeline), params(viewer), cursor, limit);
+    }
+
+    /**
+     * プロフィールの投稿一覧（F-40）。{@code authorId} の投稿を新しい順に返す。ページングは {@link #timeline} と同じ。
+     * 作者が凍結されている、または閲覧者とブロック関係にある場合は空になる。
+     */
+    public List<PostResponse> byAuthor(UUID authorId, @Nullable UUID viewer, @Nullable UUID cursor, int limit) {
+        return page("  AND p.user_id = :author\n", params(viewer).addValue("author", authorId), cursor, limit);
+    }
+
+    private List<PostResponse> page(String filter, MapSqlParameterSource params, @Nullable UUID cursor, int limit) {
+        StringBuilder sql = new StringBuilder(SELECT).append(FROM_VISIBLE).append(filter);
+        params.addValue("limit", limit);
         if (cursor != null) {
             sql.append("  AND p.id < :cursor\n");
             params.addValue("cursor", cursor);

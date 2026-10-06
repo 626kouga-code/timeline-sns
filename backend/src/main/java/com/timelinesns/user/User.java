@@ -15,6 +15,9 @@ import org.hibernate.annotations.UuidGenerator;
 @Table(name = "users")
 public class User {
 
+    public static final int MAX_DISPLAY_NAME = 50;
+    public static final int MAX_BIO = 160;
+
     @Id
     @GeneratedValue
     @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
@@ -66,6 +69,14 @@ public class User {
         if (emailVerifiedAt == null) {
             emailVerifiedAt = verifiedAt;
         }
+    }
+
+    /**
+     * 表示名と自己紹介を変更する（F-41）。前後の空白は取り除く。
+     */
+    public void updateProfile(String displayName, String bio) {
+        this.displayName = displayName.strip();
+        this.bio = bio.strip();
     }
 
     public boolean isSuspended() {

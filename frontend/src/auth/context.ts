@@ -8,6 +8,8 @@ export interface AuthContextValue {
   login: (input: LoginInput) => Promise<Me>
   signup: (input: SignupInput) => Promise<Me>
   logout: () => Promise<void>
+  /** プロフィール編集の結果など、サーバーから受け取った最新の本人の情報に差し替える */
+  setMe: (me: Me) => void
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
