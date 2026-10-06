@@ -5,6 +5,8 @@ import { Layout } from './components/Layout'
 import { LoginPage, SignupPage } from './pages/AuthPages'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import { PostDetailPage } from './pages/PostDetailPage'
+import { ProfileEditPage } from './pages/ProfileEditPage'
+import { FollowListPage, ProfilePage } from './pages/ProfilePage'
 import { TimelinePage } from './pages/TimelinePage'
 
 function RequireAuth({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
@@ -33,11 +35,11 @@ export default function App() {
         <Route path="login" element={<GuestOnly><LoginPage /></GuestOnly>} />
         <Route path="signup" element={<GuestOnly><SignupPage /></GuestOnly>} />
         <Route path="posts/:id" element={<PostDetailPage />} />
-        <Route path="users/:handle" element={<PlaceholderPage title="プロフィール" feature="F-40 プロフィール表示（#24）" />} />
-        <Route path="users/:handle/following" element={<PlaceholderPage title="フォロー中" feature="F-43 フォロー・フォロワー一覧（#27）" />} />
-        <Route path="users/:handle/followers" element={<PlaceholderPage title="フォロワー" feature="F-43 フォロー・フォロワー一覧（#27）" />} />
+        <Route path="users/:handle" element={<ProfilePage />} />
+        <Route path="users/:handle/following" element={<FollowListPage kind="following" />} />
+        <Route path="users/:handle/followers" element={<FollowListPage kind="followers" />} />
         <Route path="search" element={<PlaceholderPage title="検索" feature="F-44 ユーザー検索（#37）" />} />
-        <Route path="settings/profile" element={<RequireAuth><PlaceholderPage title="プロフィール編集" feature="F-41 プロフィール編集（#25）" /></RequireAuth>} />
+        <Route path="settings/profile" element={<RequireAuth><ProfileEditPage /></RequireAuth>} />
         <Route path="notifications" element={<RequireAuth><PlaceholderPage title="通知" feature="F-50 通知一覧（#28）" /></RequireAuth>} />
         <Route path="admin/reports" element={<RequireAuth admin><PlaceholderPage title="通報一覧" feature="F-62 管理画面（#32）" /></RequireAuth>} />
         <Route path="verify-email" element={<PlaceholderPage title="メール確認" feature="F-02 メールアドレス確認（#8）" />} />

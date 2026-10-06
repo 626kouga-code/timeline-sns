@@ -1,10 +1,10 @@
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { fetchNewCount, fetchTimeline, timelineKeys, type TimelineMode } from '../api/timeline'
 import { useAuth } from '../auth/context'
 import { Avatar } from '../components/Avatar'
 import { useLayout } from '../components/layoutContext'
+import { LoadMore } from '../components/LoadMore'
 import { PageHeader, Tabs } from '../components/PageHeader'
 import { PostCard } from '../components/PostCard'
 
@@ -49,20 +49,6 @@ export function TimelinePage({ mode }: { mode: TimelineMode }) {
     // 2 ページ目以降は捨てて、先頭のページから取り直す
     void queryClient.resetQueries({ queryKey: timelineKeys.list(mode, viewer), exact: true })
   }
-
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = timeline
-  const sentinel = useRef<HTMLDivElement>(null)
-
-  // 画面下端が見えたら次の 20 件を読み込む（無限スクロール）
-  useEffect(() => {
-    const el = sentinel.current
-    if (!el || !hasNextPage || typeof IntersectionObserver === 'undefined') return
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !isFetchingNextPage) void fetchNextPage()
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   return (
     <>
@@ -150,20 +136,14 @@ export function TimelinePage({ mode }: { mode: TimelineMode }) {
         </div>
       )}
 
-      {hasNextPage ? (
-        <div ref={sentinel} className="py-6 text-center">
-          <button
-            type="button"
-            onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="text-sm text-slate-400 hover:text-sky-600"
-          >
-            {isFetchingNextPage ? '読み込み中…' : 'さらに読み込む'}
-          </button>
-        </div>
-      ) : (
-        posts.length > 0 && <p className="py-8 text-center text-sm text-slate-400">これ以上の投稿はありません</p>
-      )}
+      {/* 画面下端が見えたら次の 20 件を読み込む（無限スクロール） */}
+      <LoadMore
+        hasNextPage={timeline.hasNextPage}
+        isFetchingNextPage={timeline.isFetchingNextPage}
+        fetchNextPage={timeline.fetchNextPage}
+        endMessage="これ以上の投稿はありません"
+        isEmpty={posts.length === 0}
+      />
     </>
   )
 }

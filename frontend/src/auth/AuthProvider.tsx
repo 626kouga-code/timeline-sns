@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           queryClient.clear()
         }
       },
+      setMe,
     }),
     [me, queryClient],
   )

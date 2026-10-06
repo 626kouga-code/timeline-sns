@@ -11,6 +11,8 @@ export type TimelineMode = 'global' | 'home'
 export const timelineKeys = {
   all: ['timeline'] as const,
   list: (mode: TimelineMode, viewer: string) => ['timeline', mode, viewer] as const,
+  /** プロフィールの投稿一覧（F-40）。いいねの反映や投稿後の取り直しをタイムラインと一緒に行うため、ここに置く */
+  user: (handle: string, viewer: string) => ['timeline', 'user', handle.toLowerCase(), viewer] as const,
   newCount: (mode: TimelineMode, viewer: string, since: string | undefined) =>
     ['timeline', mode, viewer, 'new-count', since] as const,
 }
