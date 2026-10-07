@@ -83,7 +83,8 @@ export function Layout() {
                 to={item.to}
                 end={item.end}
                 className={navClass}
-                aria-label={item.badge ? navLabel(item) : undefined}
+                // 幅が xl 未満ではアイコンだけになるので、読み上げ用の名前を常に付ける
+                aria-label={navLabel(item)}
               >
                 <span className="relative">
                   <Icon name={item.icon} className="size-7" />
