@@ -34,6 +34,7 @@ export function post(
   return {
     id,
     body,
+    images: [],
     createdAt: new Date().toISOString(),
     author: { id: author.id, handle: author.handle, displayName: author.displayName, avatarUrl: author.avatarUrl ?? null },
     likeCount: 0,

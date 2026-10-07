@@ -4,7 +4,9 @@ import com.timelinesns.storage.MediaUrls;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
@@ -29,11 +31,16 @@ public class PostQuery {
     /** 新着件数はこれ以上数えない（画面では「100 件以上」と同じ扱いでよい） */
     static final int MAX_NEW_COUNT = 100;
 
+    // 画像（images）は、1 枚を「表示用のキー サムネイルのキー 幅 高さ」とし、複数枚を「,」でつないだ 1 つの文字列で受け取る。
+    // キーは自分で作る英数字・/・-・. だけなので、空白と「,」は含まれない。画像がなければ NULL
     private static final String SELECT = """
             SELECT p.id, p.body, p.created_at, u.id AS author_id, u.handle, u.display_name, u.avatar_key,
                    (SELECT count(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
                    (SELECT count(*) FROM comments c WHERE c.post_id = p.id AND c.deleted_at IS NULL) AS comment_count,
-                   EXISTS (SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = :viewer) AS liked
+                   EXISTS (SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = :viewer) AS liked,
+                   (SELECT string_agg(i.original_key || ' ' || i.thumbnail_key || ' ' || i.width || ' ' || i.height, ','
+                                      ORDER BY i.sort_order)
+                    FROM post_images i WHERE i.post_id = p.id) AS images
             """;
 
     // ゲストのときは :viewer が NULL になり、ブロックの条件はどれにも一致しない
@@ -117,10 +124,22 @@ public class PostQuery {
         return new MapSqlParameterSource().addValue("viewer", viewer, Types.OTHER);
     }
 
+    private List<PostResponse.Image> images(@Nullable String aggregated) {
+        if (aggregated == null || aggregated.isEmpty()) {
+            return List.of();
+        }
+        return Arrays.stream(aggregated.split(","))
+                .map(row -> row.split(" "))
+                .map(f -> new PostResponse.Image(Objects.requireNonNull(mediaUrls.url(f[0])),
+                        Objects.requireNonNull(mediaUrls.url(f[1])), Integer.parseInt(f[2]), Integer.parseInt(f[3])))
+                .toList();
+    }
+
     private PostResponse toResponse(ResultSet rs, int rowNum) throws SQLException {
         return new PostResponse(
                 rs.getObject("id", UUID.class),
                 rs.getString("body"),
+                images(rs.getString("images")),
                 rs.getTimestamp("created_at").toInstant(),
                 new PostResponse.Author(
                         rs.getObject("author_id", UUID.class),

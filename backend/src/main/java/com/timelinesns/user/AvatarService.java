@@ -5,12 +5,13 @@ import com.timelinesns.image.ImageProcessor;
 import com.timelinesns.image.ImageProcessor.ProcessedImage;
 import com.timelinesns.storage.MediaUrls;
 import com.timelinesns.storage.ObjectStorage;
+import com.timelinesns.storage.StorageCleanup;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * アイコン画像の変更・削除（F-41）。
@@ -27,12 +28,15 @@ public class AvatarService {
     private final UserRepository users;
     private final ImageProcessor images;
     private final ObjectStorage storage;
+    private final StorageCleanup cleanup;
     private final MediaUrls mediaUrls;
 
-    public AvatarService(UserRepository users, ImageProcessor images, ObjectStorage storage, MediaUrls mediaUrls) {
+    public AvatarService(UserRepository users, ImageProcessor images, ObjectStorage storage, StorageCleanup cleanup,
+            MediaUrls mediaUrls) {
         this.users = users;
         this.images = images;
         this.storage = storage;
+        this.cleanup = cleanup;
         this.mediaUrls = mediaUrls;
     }
 
@@ -42,6 +46,7 @@ public class AvatarService {
         ProcessedImage image = images.squareThumbnail(upload, SIZE);
         String key = "avatars/" + userId + "/" + UUID.randomUUID() + "." + image.extension();
         storage.put(key, image.content(), image.contentType());
+        cleanup.deleteOnRollback(List.of(key));
         replace(user, key);
         return MeResponse.from(user, mediaUrls);
     }
@@ -55,16 +60,11 @@ public class AvatarService {
 
     private void replace(User user, String newKey) {
         String oldKey = user.changeAvatar(newKey);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                // 確定したら古い画像が、取り消されたら新しい画像が使われなくなる
-                String unused = status == STATUS_COMMITTED ? oldKey : newKey;
-                if (unused != null) {
-                    storage.deleteQuietly(unused);
-                }
-            }
-        });
+        List<String> unused = new ArrayList<>();
+        if (oldKey != null) {
+            unused.add(oldKey);
+        }
+        cleanup.deleteAfterCommit(unused);
     }
 
     // トークンは有効でも、発行後に退会したユーザーは存在しない

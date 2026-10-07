@@ -32,10 +32,23 @@ export interface PostAuthor {
   avatarUrl: string | null
 }
 
-/** 投稿（PostResponse）。画像は #14 で追加する */
+/** 投稿の画像（PostResponse.Image） */
+export interface PostImage {
+  /** 拡大表示用（長辺 2048px まで。GIF はアニメーションのまま） */
+  url: string
+  /** 一覧用（長辺 640px まで） */
+  thumbnailUrl: string
+  width: number
+  height: number
+}
+
+/** 投稿（PostResponse） */
 export interface Post {
   id: string
+  /** 画像だけの投稿なら空文字 */
   body: string
+  /** 0〜4 枚、投稿したときの順 */
+  images: PostImage[]
   /** ISO 8601 */
   createdAt: string
   author: PostAuthor

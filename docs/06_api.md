@@ -15,12 +15,12 @@ REST（JSON）で提供する。一覧は `?cursor=<最後のid>&limit=20` の�
 | | `GET /oauth2/authorization/google` | Google ログイン開始 |
 | タイムライン | `GET /api/timeline/home` `GET /api/timeline/global` | ホーム／全体タイムライン |
 | | `GET /api/timeline/home/new-count?since=<id>` `GET /api/timeline/global/new-count?since=<id>` | 新着件数（`since` より新しい投稿の数。新着表示に使う） |
-| 投稿 | `POST /api/posts`（multipart） | 投稿作成（画像つき） |
-| | `GET /api/posts/{id}` `DELETE /api/posts/{id}` | 取得・削除 |
+| 投稿 | `POST /api/posts`（multipart の `body` と `images` 0〜4 個） | 投稿作成。画像があれば本文は空でもよい。画像はサーバーで中身から形式を判定し（JPEG / PNG / WebP / GIF、1 枚 5MB まで）、Exif を除いて表示用（長辺 2048px）とサムネイル（長辺 640px）を作る。GIF は表示用だけ元のファイル（アニメーションのまま） |
+| | `GET /api/posts/{id}` `DELETE /api/posts/{id}` | 取得・削除（削除すると保存先の画像も消す）。投稿の応答は `images: [{ url, thumbnailUrl, width, height }]` を含む |
 | | `POST /api/posts/{id}/likes` `DELETE /api/posts/{id}/likes` | いいね・取り消し（冪等。応答は `{ liked, likeCount }`） |
 | コメント | `GET /api/posts/{id}/comments` `POST /api/posts/{id}/comments` | 一覧（全件を古い順の平らな配列で返す。スレッドはフロントで組み立てる）・作成（`parentId` を指定すると返信） |
 | | `DELETE /api/comments/{id}` | 削除（本人のみ。返信が付いていれば論理削除、なければ物理削除） |
-| ユーザー | `GET /api/search/users?q=<キーワード>` | ユーザー検索（ユーザーID・表示名の部分一致） |
+| ユーザー | `GET /api/search/users?q=<キーワード>` | ユーザー検索（ユーザーID・表示名の部分一致、大文字小文字を区別しない、ゲスト可）。並びはユーザーIDの完全一致 → 前方一致 → それ以外。凍結ユーザーと、閲覧者とブロック関係にあるユーザーは除く。`q` は 1〜50 文字 |
 | | `GET /api/users/{handle}` `GET /api/users/{handle}/posts` | プロフィール（フォロー数・フォロワー数と、閲覧者との関係 `following` `followedBy` `blocking` `blockedBy` を含む）・投稿一覧（ブロック関係にあれば空）。`{handle}` は大文字小文字を区別しない。凍結ユーザーは 404 |
 | | `GET /api/users/{handle}/following` `GET /api/users/{handle}/followers` | フォロー・フォロワー一覧（フォローした日時の新しい順。凍結ユーザーと、閲覧者とブロック関係にあるユーザーは除く） |
 | | `PUT /api/users/{handle}/follow` `DELETE /api/users/{handle}/follow` | フォロー・解除（冪等。応答は `{ following, followerCount }`。自分自身は 400、ブロック関係にある相手は 403） |
