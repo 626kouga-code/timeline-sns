@@ -54,30 +54,59 @@ public class ImageProcessor {
      * 中央を正方形に切り抜き、{@code size} × {@code size} に縮小する（小さい画像は拡大しない）。
      */
     public ProcessedImage squareThumbnail(byte[] input, int size) {
-        if (input.length > MAX_BYTES) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "IMAGE_TOO_LARGE", "画像は 5MB 以内にしてください");
-        }
-        requireSupportedFormat(input);
-        BufferedImage image = applyOrientation(decode(input), orientation(input));
-
+        BufferedImage image = decode(input).image;
         int side = Math.min(image.getWidth(), image.getHeight());
         BufferedImage square = image.getSubimage(
                 (image.getWidth() - side) / 2, (image.getHeight() - side) / 2, side, side);
-        return encode(resize(square, Math.min(size, side)));
+        int target = Math.min(size, side);
+        return encode(resize(square, target, target));
     }
 
-    private static void requireSupportedFormat(byte[] b) {
-        if (startsWith(b, 0, 0xFF, 0xD8, 0xFF)) {
-            return;
+    /**
+     * 形式・サイズを確かめて展開し、Exif の向きを反映する。1 回展開すれば {@link #fit} で何通りでも縮小できる。
+     */
+    public DecodedImage decode(byte[] input) {
+        if (input.length > MAX_BYTES) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "IMAGE_TOO_LARGE", "画像は 5MB 以内にしてください");
         }
-        if (startsWith(b, 0, 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A)) {
-            return;
+        boolean gif = detectGif(input);
+        return new DecodedImage(applyOrientation(read(input), orientation(input)), gif, input);
+    }
+
+    /**
+     * 縦横比を保ったまま、長辺が {@code maxSide} に収まるよう縮小する（切り抜かない。小さい画像は拡大しない）。
+     */
+    public ProcessedImage fit(DecodedImage decoded, int maxSide) {
+        BufferedImage image = decoded.image;
+        int longSide = Math.max(image.getWidth(), image.getHeight());
+        if (longSide <= maxSide) {
+            return encode(image);
         }
+        double scale = (double) maxSide / longSide;
+        int width = Math.max(1, (int) Math.round(image.getWidth() * scale));
+        int height = Math.max(1, (int) Math.round(image.getHeight() * scale));
+        return encode(resize(image, width, height));
+    }
+
+    /**
+     * GIF をアニメーションのまま、作り直さずに使う（GIF は Exif を持たない）。形式とサイズは {@link #decode} で確認済み。
+     */
+    public ProcessedImage originalGif(DecodedImage decoded) {
+        if (!decoded.gif) {
+            throw new IllegalArgumentException("GIF ではありません");
+        }
+        return new ProcessedImage(decoded.original, "image/gif", "gif", decoded.width(), decoded.height());
+    }
+
+    // 先頭バイトで形式を判定する。対応していない形式なら例外。戻り値は GIF かどうか
+    private static boolean detectGif(byte[] b) {
         if (startsWith(b, 0, 'G', 'I', 'F', '8') && b.length > 5 && (b[4] == '7' || b[4] == '9') && b[5] == 'a') {
-            return;
+            return true;
         }
-        if (startsWith(b, 0, 'R', 'I', 'F', 'F') && startsWith(b, 8, 'W', 'E', 'B', 'P')) {
-            return;
+        if (startsWith(b, 0, 0xFF, 0xD8, 0xFF)
+                || startsWith(b, 0, 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A)
+                || (startsWith(b, 0, 'R', 'I', 'F', 'F') && startsWith(b, 8, 'W', 'E', 'B', 'P'))) {
+            return false;
         }
         throw unsupported();
     }
@@ -95,7 +124,7 @@ public class ImageProcessor {
     }
 
     // 画素数を先に確かめてから展開する
-    private static BufferedImage decode(byte[] input) {
+    private static BufferedImage read(byte[] input) {
         try (ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(input))) {
             Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
             if (!readers.hasNext()) {
@@ -164,28 +193,32 @@ public class ImageProcessor {
     }
 
     // 大きく縮小するときは半分ずつ縮めて、ジャギーを抑える
-    private static BufferedImage resize(BufferedImage image, int size) {
+    private static BufferedImage resize(BufferedImage image, int width, int height) {
         BufferedImage current = image;
-        int side = image.getWidth();
+        int w = image.getWidth();
+        int h = image.getHeight();
         do {
-            side = Math.max(size, side / 2);
-            BufferedImage next = new BufferedImage(side, side, BufferedImage.TYPE_INT_ARGB);
+            w = Math.max(width, w / 2);
+            h = Math.max(height, h / 2);
+            BufferedImage next = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = next.createGraphics();
             try {
                 g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                 g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                g.drawImage(current, 0, 0, side, side, null);
+                g.drawImage(current, 0, 0, w, h, null);
             } finally {
                 g.dispose();
             }
             current = next;
-        } while (side > size);
+        } while (w > width || h > height);
         return current;
     }
 
     private static ProcessedImage encode(BufferedImage image) {
+        int width = image.getWidth();
+        int height = image.getHeight();
         if (hasTransparency(image)) {
-            return new ProcessedImage(write(image, "png", null), "image/png", "png");
+            return new ProcessedImage(write(image, "png", null), "image/png", "png", width, height);
         }
         // JPEG は透過を持てないので、白の背景に描いて RGB にする
         BufferedImage rgb = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -197,7 +230,7 @@ public class ImageProcessor {
         } finally {
             g.dispose();
         }
-        return new ProcessedImage(write(rgb, "jpeg", JPEG_QUALITY), "image/jpeg", "jpg");
+        return new ProcessedImage(write(rgb, "jpeg", JPEG_QUALITY), "image/jpeg", "jpg", width, height);
     }
 
     private static boolean hasTransparency(BufferedImage image) {
@@ -239,11 +272,42 @@ public class ImageProcessor {
     }
 
     /**
+     * 展開した画像（Exif の向きは反映済み）。{@link #fit}・{@link #originalGif} に渡して使う。
+     */
+    public static final class DecodedImage {
+
+        private final BufferedImage image;
+        private final boolean gif;
+        private final byte[] original;
+
+        private DecodedImage(BufferedImage image, boolean gif, byte[] original) {
+            this.image = image;
+            this.gif = gif;
+            this.original = original.clone();
+        }
+
+        /** GIF なら true（アニメーションのまま残すかどうかの判断に使う） */
+        public boolean isGif() {
+            return gif;
+        }
+
+        public int width() {
+            return image.getWidth();
+        }
+
+        public int height() {
+            return image.getHeight();
+        }
+    }
+
+    /**
      * 作り直した画像。
      *
-     * @param extension 保存するときの拡張子（jpg / png）
+     * @param extension 保存するときの拡張子（jpg / png / gif）
+     * @param width     幅（px）
+     * @param height    高さ（px）
      */
-    public record ProcessedImage(byte[] content, String contentType, String extension) {
+    public record ProcessedImage(byte[] content, String contentType, String extension, int width, int height) {
 
         public ProcessedImage {
             content = content.clone();

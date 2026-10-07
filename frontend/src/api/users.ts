@@ -15,6 +15,8 @@ export const userKeys = {
   profile: (handle: string, viewer: string) => ['user', handle.toLowerCase(), viewer] as const,
   followList: (handle: string, kind: FollowListKind, viewer: string) =>
     ['user', handle.toLowerCase(), viewer, kind] as const,
+  // プロフィールのキー（['user', ハンドル, …]）と区別するため '#search' を入れる（ハンドルに # は使えない）
+  search: (query: string, viewer: string) => ['user', '#search', query, viewer] as const,
 }
 
 const base = (handle: string) => `/api/users/${encodeURIComponent(handle)}`
@@ -33,6 +35,13 @@ export function fetchUserPosts(handle: string, cursor: string | null): Promise<P
 /** フォロー・フォロワー一覧（F-43）。フォローした日時の新しい順 */
 export function fetchFollowList(handle: string, kind: FollowListKind, cursor: string | null): Promise<Page<UserSummary>> {
   return apiFetch<Page<UserSummary>>(`${base(handle)}/${kind}${cursorQuery(cursor)}`)
+}
+
+/** ユーザー検索（F-44）。ユーザーIDの完全一致 → 前方一致 → それ以外の順 */
+export function searchUsers(query: string, cursor: string | null): Promise<Page<UserSummary>> {
+  const params = new URLSearchParams({ q: query })
+  if (cursor) params.set('cursor', cursor)
+  return apiFetch<Page<UserSummary>>(`/api/search/users?${params.toString()}`)
 }
 
 /** フォロー（F-42）。冪等なので二重に送っても状態は変わらない */

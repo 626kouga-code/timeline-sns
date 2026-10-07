@@ -81,14 +81,15 @@ class PostApiTest {
                     .andExpect(jsonPath("$.errors.body").value("本文は 280 文字以内にしてください"));
         }
 
+        // 画像もなく本文も空なら投稿できない（画像だけの投稿は PostImageApiTest）
         @Test
-        void rejectsBlankBody() throws Exception {
+        void rejectsBlankBodyWithoutImages() throws Exception {
             create(alice, "  \n ")
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.errors.body").value("本文を入力してください"));
+                    .andExpect(jsonPath("$.errors.body").value("本文を入力するか、画像を選んでください"));
             mvc.perform(multipart("/api/posts").header(HttpHeaders.AUTHORIZATION, fixtures.bearer(alice)))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.errors.body").value("本文を入力してください"));
+                    .andExpect(jsonPath("$.errors.body").value("本文を入力するか、画像を選んでください"));
         }
 
         @Test

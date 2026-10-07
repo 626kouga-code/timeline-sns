@@ -9,14 +9,12 @@ import { useAuth } from '../auth/context'
 import { Avatar } from '../components/Avatar'
 import { AvatarCropper } from '../components/AvatarCropper'
 import { Icon } from '../components/Icon'
+import { IMAGE_TYPES, imageFileError } from '../components/imageFiles'
 import { PageHeader } from '../components/PageHeader'
 import { useToast } from '../components/toast'
 
 const MAX_NAME = 50
 const MAX_BIO = 160
-// サーバーと同じ条件（形式はサーバーでファイルの中身からも確認する）
-const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 // プロフィール編集（F-41, `/settings/profile`）
 export function ProfileEditPage() {
@@ -116,8 +114,8 @@ export function ProfileEditPage() {
               // 同じファイルを選び直しても onChange が呼ばれるよう、選択を空に戻す
               e.target.value = ''
               if (!file) return
-              if (!IMAGE_TYPES.includes(file.type)) showToast('JPEG・PNG・WebP・GIF の画像を選んでください')
-              else if (file.size > MAX_IMAGE_BYTES) showToast('画像は 5MB 以内にしてください')
+              const error = imageFileError(file)
+              if (error) showToast(error)
               else setCropping(file)
             }}
           />

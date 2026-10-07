@@ -4,6 +4,7 @@ import { getPost } from '../api/posts'
 import { useAuth } from '../auth/context'
 import { Avatar } from '../components/Avatar'
 import { CommentForm, CommentThread } from '../components/CommentThread'
+import { ImageGrid } from '../components/ImageGrid'
 import { LikeButton } from '../components/LikeButton'
 import { Menu, type MenuItem } from '../components/Menu'
 import { PageHeader } from '../components/PageHeader'
@@ -65,6 +66,7 @@ export function PostDetailPage() {
           <Menu items={menuItems} label="投稿のメニュー" />
         </div>
         {post.body && <p className="mt-3 text-lg break-words whitespace-pre-wrap">{post.body}</p>}
+        <ImageGrid images={post.images} />
         <p className="mt-3 border-b border-slate-100 pb-3 text-sm text-slate-500">
           <time dateTime={post.createdAt}>{formatDateTime(post.createdAt)}</time>
         </p>

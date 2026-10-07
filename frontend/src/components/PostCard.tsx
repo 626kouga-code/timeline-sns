@@ -3,6 +3,7 @@ import type { Post } from '../api/types'
 import { useAuth } from '../auth/context'
 import { Avatar } from './Avatar'
 import { Icon } from './Icon'
+import { ImageGrid } from './ImageGrid'
 import { LikeButton } from './LikeButton'
 import { Menu, type MenuItem } from './Menu'
 import { formatRelative } from './time'
@@ -45,6 +46,7 @@ export function PostCard({ post }: { post: Post }) {
           <Menu items={menuItems} label="投稿のメニュー" />
         </div>
         {post.body && <p className="mt-0.5 break-words whitespace-pre-wrap">{post.body}</p>}
+        <ImageGrid images={post.images} />
         <div className="mt-2 flex max-w-xs gap-10 text-sm text-slate-500">
           <span className="flex items-center gap-1.5" aria-label={`コメント ${post.commentCount} 件`}>
             <Icon name="comment" className="size-[18px]" />
