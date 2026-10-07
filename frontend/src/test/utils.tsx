@@ -45,10 +45,11 @@ export function post(
 
 type Handler = (path: string, init?: RequestInit) => Response | Promise<Response>
 
-// 指定がなければタイムラインとコメント欄は空にする
+// 指定がなければタイムラインとコメント欄は空、未読の通知は 0 件にする
 const defaults: Record<string, Handler> = {
   '/api/timeline/global': () => page([]),
   '/api/timeline/home': () => page([]),
+  '/api/notifications/unread-count': () => json(200, { count: 0 }),
 }
 
 /**

@@ -1,5 +1,7 @@
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
+import { fetchUnreadCount, notificationKeys } from '../api/notifications'
 import { useAuth } from '../auth/context'
 import { Avatar } from './Avatar'
 import { ComposeModal } from './ComposeModal'
@@ -11,19 +13,37 @@ interface NavItem {
   label: string
   icon: IconName
   end?: boolean
+  /** 未読数など。0 なら出さない */
+  badge?: number
 }
+
+/** 未読の通知数の確認間隔（F-51）。タイムラインの新着確認と同じ */
+export const UNREAD_INTERVAL = 30_000
+
+const badgeText = (count: number) => (count >= 100 ? '99+' : String(count))
+const navLabel = (item: NavItem) => (item.badge ? `${item.label}（未読 ${badgeText(item.badge)} 件）` : item.label)
 
 export function Layout() {
   const { me, logout } = useAuth()
   const navigate = useNavigate()
   const [composeOpen, setComposeOpen] = useState(false)
 
+  // 未読の通知数（F-51）。タブが非表示のあいだは確認しない
+  const unread = useQuery({
+    queryKey: notificationKeys.unreadCount(me?.id ?? ''),
+    queryFn: fetchUnreadCount,
+    enabled: !!me,
+    refetchInterval: UNREAD_INTERVAL,
+    refetchIntervalInBackground: false,
+  })
+  const unreadCount = unread.data?.count ?? 0
+
   const items: NavItem[] = me
     ? [
         { to: '/home', label: 'ホーム', icon: 'home' },
         { to: '/', label: '全体', icon: 'globe', end: true },
         { to: '/search', label: '検索', icon: 'search' },
-        { to: '/notifications', label: '通知', icon: 'bell' },
+        { to: '/notifications', label: '通知', icon: 'bell', badge: unreadCount },
         { to: `/users/${me.handle}`, label: 'プロフィール', icon: 'user' },
         { to: '/settings/profile', label: '設定', icon: 'settings' },
         ...(me.role === 'ADMIN' ? [{ to: '/admin/reports', label: '管理', icon: 'shield' as const }] : []),
@@ -58,8 +78,21 @@ export function Layout() {
           </NavLink>
           <nav className="space-y-1">
             {items.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={navClass}>
-                <Icon name={item.icon} className="size-7" />
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={navClass}
+                aria-label={item.badge ? navLabel(item) : undefined}
+              >
+                <span className="relative">
+                  <Icon name={item.icon} className="size-7" />
+                  {!!item.badge && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-5 rounded-full bg-sky-500 px-1 text-center text-xs font-bold text-white">
+                      {badgeText(item.badge)}
+                    </span>
+                  )}
+                </span>
                 <span className="hidden xl:inline">{item.label}</span>
               </NavLink>
             ))}
@@ -108,9 +141,14 @@ export function Layout() {
             to={item.to}
             end={item.end}
             className={({ isActive }) => `relative p-3 ${isActive ? 'text-slate-900' : 'text-slate-500'}`}
-            aria-label={item.label}
+            aria-label={navLabel(item)}
           >
             <Icon name={item.icon} className="size-6" />
+            {!!item.badge && (
+              <span className="absolute top-1 right-1 min-w-4 rounded-full bg-sky-500 px-1 text-center text-[10px] font-bold text-white">
+                {badgeText(item.badge)}
+              </span>
+            )}
           </NavLink>
         ))}
         {me && (

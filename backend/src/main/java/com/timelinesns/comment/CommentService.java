@@ -4,6 +4,7 @@ import com.timelinesns.comment.CommentQuery.Ancestor;
 import com.timelinesns.comment.CommentQuery.DeleteTarget;
 import com.timelinesns.comment.CommentQuery.Row;
 import com.timelinesns.common.ApiException;
+import com.timelinesns.notification.NotificationService;
 import com.timelinesns.post.PostQuery;
 import com.timelinesns.user.UserRepository;
 import java.time.Clock;
@@ -27,10 +28,13 @@ public class CommentService {
     private final CommentQuery comments;
     private final PostQuery posts;
     private final UserRepository users;
+    private final NotificationService notifications;
     private final Clock clock;
 
-    public CommentService(CommentQuery comments, PostQuery posts, UserRepository users, Clock clock) {
+    public CommentService(CommentQuery comments, PostQuery posts, UserRepository users,
+            NotificationService notifications, Clock clock) {
         this.comments = comments;
+        this.notifications = notifications;
         this.posts = posts;
         this.users = users;
         this.clock = clock;
@@ -90,6 +94,12 @@ public class CommentService {
                     .orElseThrow(CommentService::notFound);
         }
         UUID id = comments.insert(postId, userId, parentId, request.body().strip());
+        // 投稿へのコメントは投稿者へ、返信は返信先のコメントを書いた人へ通知する（F-50）
+        if (parentId == null) {
+            notifications.commented(postId, id, userId);
+        } else {
+            notifications.replied(postId, id, parentId, userId);
+        }
         return comments.findById(id, userId).orElseThrow(CommentService::notFound).toResponse();
     }
 
