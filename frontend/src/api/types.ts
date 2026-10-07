@@ -124,3 +124,21 @@ export interface FollowState {
   following: boolean
   followerCount: number
 }
+
+export type NotificationType = 'LIKE' | 'COMMENT' | 'REPLY' | 'FOLLOW'
+
+/** 通知（NotificationResponse） */
+export interface Notification {
+  id: string
+  type: NotificationType
+  /** ISO 8601 */
+  createdAt: string
+  /** 取得した時点で未読だったか */
+  unread: boolean
+  /** 通知のもとになった操作をした人 */
+  actor: PostAuthor
+  /** 対象の投稿。FOLLOW なら null */
+  post: { id: string; body: string; thumbnailUrl: string | null } | null
+  /** コメント・返信。LIKE・FOLLOW なら null。body は削除済みなら null */
+  comment: { id: string; body: string | null } | null
+}

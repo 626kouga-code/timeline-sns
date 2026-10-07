@@ -1,6 +1,7 @@
 package com.timelinesns.follow;
 
 import com.timelinesns.common.ApiException;
+import com.timelinesns.notification.NotificationService;
 import com.timelinesns.user.UserQuery;
 import com.timelinesns.user.UserQuery.Target;
 import com.timelinesns.user.UserRepository;
@@ -13,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * フォロー・解除（F-42）。どちらも冪等で、二重に送ってもエラーにしない。
- * SQL の回数はフォロワー数によらず固定（本人と相手の確認・書き込み・集計）。
+ * SQL の回数はフォロワー数によらず固定（本人と相手の確認・書き込み・通知・集計）。
  */
 @Service
 public class FollowService {
@@ -21,9 +22,12 @@ public class FollowService {
     private final NamedParameterJdbcTemplate jdbc;
     private final UserQuery userQuery;
     private final UserRepository users;
+    private final NotificationService notifications;
 
-    public FollowService(NamedParameterJdbcTemplate jdbc, UserQuery userQuery, UserRepository users) {
+    public FollowService(NamedParameterJdbcTemplate jdbc, UserQuery userQuery, UserRepository users,
+            NotificationService notifications) {
         this.jdbc = jdbc;
+        this.notifications = notifications;
         this.userQuery = userQuery;
         this.users = users;
     }
@@ -38,8 +42,13 @@ public class FollowService {
         if (target.blocked()) {
             throw new ApiException(HttpStatus.FORBIDDEN, "BLOCKED", "このユーザーはフォローできません");
         }
-        jdbc.update("INSERT INTO follows (follower_id, followee_id) VALUES (:userId, :targetId) ON CONFLICT DO NOTHING",
+        int added = jdbc.update(
+                "INSERT INTO follows (follower_id, followee_id) VALUES (:userId, :targetId) ON CONFLICT DO NOTHING",
                 params(userId, target.id()));
+        // 二重に送られたとき（すでにフォロー済み）は通知を増やさない
+        if (added == 1) {
+            notifications.followed(target.id(), userId);
+        }
         return state(userId, target.id());
     }
 
@@ -48,6 +57,7 @@ public class FollowService {
         Target target = findTarget(handle, userId);
         jdbc.update("DELETE FROM follows WHERE follower_id = :userId AND followee_id = :targetId",
                 params(userId, target.id()));
+        notifications.unfollowed(target.id(), userId);
         return state(userId, target.id());
     }
 
