@@ -65,9 +65,11 @@ export function mockApi(handlers: Record<string, Handler>) {
   return fetchMock
 }
 
+/** path にはクエリ文字列（`/search?q=…`）も含められる */
 export function renderApp(path: string, state?: unknown) {
+  const [pathname, query] = path.split('?')
   render(
-    <MemoryRouter initialEntries={[{ pathname: path, state }]}>
+    <MemoryRouter initialEntries={[{ pathname, search: query ? `?${query}` : '', state }]}>
       <AppProviders>
         <App />
       </AppProviders>

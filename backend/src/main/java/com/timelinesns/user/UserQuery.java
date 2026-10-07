@@ -80,6 +80,39 @@ public class UserQuery {
             ORDER BY f.created_at DESC, f.{listed} DESC
             LIMIT :limit""";
 
+    // 検索結果の順位。ユーザーIDの完全一致 → 前方一致 → それ以外（表示名だけの一致を含む）。{t} は表の別名に置き換える
+    private static final String SEARCH_RANK = """
+            CASE WHEN lower({t}.handle) = lower(:q) THEN 0
+                 WHEN {t}.handle ILIKE :prefix ESCAPE '\\' THEN 1
+                 ELSE 2 END""";
+
+    // ユーザー検索（F-44）。ユーザーID・表示名の部分一致（大文字小文字を区別しない。pg_trgm の GIN インデックスが効く）。
+    // 凍結されたユーザーと、閲覧者とブロック関係にあるユーザーは出さない。
+    // 並びは順位 → ユーザーID。cursor は前のページの最後のユーザーで、その (順位, ユーザーID) より後から続ける
+    private static final String SEARCH = """
+            SELECT u.id, u.handle, u.display_name, u.bio, u.avatar_key,
+                   EXISTS (SELECT 1 FROM follows v
+                           WHERE v.follower_id = :viewer AND v.followee_id = u.id) AS following,
+                   EXISTS (SELECT 1 FROM follows v
+                           WHERE v.follower_id = u.id AND v.followee_id = :viewer) AS followed_by
+            FROM users u
+            WHERE (u.handle ILIKE :pattern ESCAPE '\\' OR u.display_name ILIKE :pattern ESCAPE '\\')
+              AND u.status = 'ACTIVE'
+              AND NOT EXISTS (
+                  SELECT 1 FROM blocks b
+                  WHERE (b.blocker_id = :viewer AND b.blocked_id = u.id)
+                     OR (b.blocker_id = u.id AND b.blocked_id = :viewer))
+            """;
+
+    private static final String SEARCH_CURSOR = """
+              AND ({rank_u}, lower(u.handle)) > (SELECT {rank_c}, lower(c.handle) FROM users c WHERE c.id = :cursor)
+            """.replace("{rank_u}", SEARCH_RANK.replace("{t}", "u"))
+            .replace("{rank_c}", SEARCH_RANK.replace("{t}", "c"));
+
+    private static final String SEARCH_ORDER = """
+            ORDER BY {rank}, lower(u.handle)
+            LIMIT :limit""".replace("{rank}", SEARCH_RANK.replace("{t}", "u"));
+
     private final NamedParameterJdbcTemplate jdbc;
     private final MediaUrls mediaUrls;
 
@@ -117,6 +150,29 @@ public class UserQuery {
             params.addValue("cursor", cursor);
         }
         return jdbc.query(sql, params, this::toSummary);
+    }
+
+    /**
+     * ユーザー検索（F-44）。{@code query} は前後の空白を除いた空でない文字列。
+     * 次のページがあるか判定できるよう、呼び出し側は limit + 1 件を要求する。
+     */
+    public List<UserSummaryResponse> search(String query, @Nullable UUID viewer, @Nullable UUID cursor, int limit) {
+        String escaped = escapeLike(query);
+        MapSqlParameterSource params = params(viewer)
+                .addValue("q", query)
+                .addValue("prefix", escaped + "%")
+                .addValue("pattern", "%" + escaped + "%")
+                .addValue("limit", limit);
+        String sql = SEARCH + (cursor == null ? "" : SEARCH_CURSOR) + SEARCH_ORDER;
+        if (cursor != null) {
+            params.addValue("cursor", cursor);
+        }
+        return jdbc.query(sql, params, this::toSummary);
+    }
+
+    // LIKE の特殊文字（% _ と、エスケープに使う \）を、ただの文字として扱わせる
+    private static String escapeLike(String s) {
+        return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
     // NULL のときも PostgreSQL が型を決められるよう、型を明示して渡す
