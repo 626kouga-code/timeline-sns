@@ -1,9 +1,14 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import type { ReactElement } from 'react'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { vi } from 'vitest'
 import App from '../App'
 import { AppProviders } from '../AppProviders'
 import type { Me, Post } from '../api/types'
+import { AuthContext, type AuthContextValue } from '../auth/context'
+import { ToastProvider } from '../components/ToastProvider'
+import { LocationProbe } from './LocationProbe'
 
 export const user: Me = {
   id: 'u1',
@@ -77,4 +82,69 @@ export function renderApp(path: string, state?: unknown) {
       </AppProviders>
     </MemoryRouter>,
   )
+}
+
+interface RenderOptions {
+  /** ログイン中のユーザー。null（既定）なら未ログイン */
+  me?: Me | null
+  /** 最初に表示しているパス。履歴を複数積むときは配列で渡す（最後が今の画面） */
+  path?: string | string[]
+  /** コンポーネントを置くルートのパス。useParams を使う部品のテストで指定する */
+  route?: string
+}
+
+/**
+ * コンポーネント単体を、アプリと同じ Provider（TanStack Query・トースト・ログイン状態・ルーター）で包んで描画する。
+ * ログイン状態は起動時のリフレッシュをせずに `me` で決める。`auth` の login / logout などは vi.fn() にしてある。
+ * 画面遷移は `screen.getByTestId('location')` の中身（パス）と data-from（ログイン後に戻る先）で確かめる。
+ */
+export function renderWithProviders(ui: ReactElement, { me = null, path = '/', route = '*' }: RenderOptions = {}) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false }, mutations: { retry: false } },
+  })
+  const auth: AuthContextValue = {
+    me,
+    login: vi.fn(),
+    signup: vi.fn(),
+    logout: vi.fn(() => Promise.resolve()),
+    setMe: vi.fn(),
+  }
+  const entries = Array.isArray(path) ? path : [path]
+  const result = render(
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <AuthContext.Provider value={auth}>
+          <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
+            <Routes>
+              <Route path={route} element={ui} />
+            </Routes>
+            <LocationProbe />
+          </MemoryRouter>
+        </AuthContext.Provider>
+      </ToastProvider>
+    </QueryClientProvider>,
+  )
+  return { ...result, queryClient, auth }
+}
+
+/** 解決を外から決められる Promise（送信中の表示を確かめるときに、応答を待たせる） */
+export function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
+
+/** fetch のモックに渡された n 回目のリクエスト（パス・メソッド・ヘッダー・本文） */
+export function request(fetchMock: ReturnType<typeof mockApi>, n = 0) {
+  const [path, init] = fetchMock.mock.calls[n]
+  return {
+    path,
+    method: init?.method ?? 'GET',
+    headers: new Headers(init?.headers),
+    body: init?.body,
+  }
 }
