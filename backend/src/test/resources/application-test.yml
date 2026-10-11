@@ -2,3 +2,8 @@
 app:
   auth:
     jwt-secret: test-secret-for-integration-tests-only-0123456789
+
+# docs/openapi.json を作る・照合するため（OpenApiSpecTest）
+springdoc:
+  api-docs:
+    enabled: true

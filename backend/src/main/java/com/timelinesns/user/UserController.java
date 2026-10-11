@@ -6,6 +6,8 @@ import com.timelinesns.post.PostQuery;
 import com.timelinesns.post.PostResponse;
 import com.timelinesns.timeline.PageResponse;
 import com.timelinesns.user.UserQuery.FollowList;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * どれもゲストも見られる（SecurityConfig で GET /api/users/** を許可している）。
  * 凍結されたユーザー（F-63）は存在しないものとして 404 にする。
  */
+@Tag(name = "ユーザー")
 @RestController
 @RequestMapping("/api/users/{handle}")
 public class UserController {
@@ -35,6 +38,7 @@ public class UserController {
         this.posts = posts;
     }
 
+    @Operation(summary = "プロフィール", description = "フォロー数・フォロワー数と、閲覧者との関係を含む。凍結ユーザーは 404")
     @GetMapping
     @Transactional(readOnly = true)
     public ProfileResponse profile(@AuthenticationPrincipal @Nullable Jwt jwt, @PathVariable String handle) {
@@ -44,6 +48,7 @@ public class UserController {
     /**
      * 投稿一覧。閲覧者とブロック関係にあるユーザーなら空になる（F-60）。
      */
+    @Operation(summary = "ユーザーの投稿一覧", description = "閲覧者とブロック関係にあれば空")
     @GetMapping("/posts")
     @Transactional(readOnly = true)
     public PageResponse<PostResponse> posts(@AuthenticationPrincipal @Nullable Jwt jwt, @PathVariable String handle,
@@ -55,6 +60,7 @@ public class UserController {
         return PageResponse.of(posts.byAuthor(owner, viewer, cursor, size + 1), size, PostResponse::id);
     }
 
+    @Operation(summary = "フォロー一覧", description = "フォローした日時の新しい順")
     @GetMapping("/following")
     @Transactional(readOnly = true)
     public PageResponse<UserSummaryResponse> following(@AuthenticationPrincipal @Nullable Jwt jwt,
@@ -63,6 +69,7 @@ public class UserController {
         return followList(FollowList.FOLLOWING, Viewer.idOrNull(jwt), handle, cursor, limit);
     }
 
+    @Operation(summary = "フォロワー一覧", description = "フォローされた日時の新しい順")
     @GetMapping("/followers")
     @Transactional(readOnly = true)
     public PageResponse<UserSummaryResponse> followers(@AuthenticationPrincipal @Nullable Jwt jwt,

@@ -3,6 +3,8 @@ package com.timelinesns.user;
 import com.timelinesns.common.ApiException;
 import com.timelinesns.common.Viewer;
 import com.timelinesns.timeline.PageResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  * ユーザー検索（F-44）。ゲストも使える（SecurityConfig で GET /api/search/** を許可している）。
  * パスを /api/users/search にしないのは、ユーザーID「search」のプロフィール（/api/users/{handle}）と衝突するため。
  */
+@Tag(name = "ユーザー")
 @RestController
 @RequestMapping("/api/search")
 public class SearchController {
@@ -30,6 +33,8 @@ public class SearchController {
         this.users = users;
     }
 
+    @Operation(summary = "ユーザー検索", description = "q（1〜50 文字）でユーザーID・表示名を部分一致検索する。大文字小文字は区別しない。"
+            + "並びはユーザーIDの完全一致 → 前方一致 → それ以外")
     @GetMapping("/users")
     @Transactional(readOnly = true)
     public PageResponse<UserSummaryResponse> users(@AuthenticationPrincipal @Nullable Jwt jwt,

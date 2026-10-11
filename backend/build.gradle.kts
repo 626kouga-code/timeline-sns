@@ -27,6 +27,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.flywaydb:flyway-database-postgresql")
+    // API 仕様書（OpenAPI）の自動生成と Swagger UI。有効にするのはローカルとテストだけ（application.yml）
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
     // 画像の保存先（本番は S3、ローカル・テストは S3 互換の S3Mock）
     implementation(platform("software.amazon.awssdk:bom:2.55.11"))
     implementation("software.amazon.awssdk:s3")
@@ -53,6 +55,12 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // ./gradlew test -PupdateOpenApi で docs/openapi.json を作り直す（OpenApiSpecTest）
+    val updateOpenApi = project.hasProperty("updateOpenApi")
+    systemProperty("updateOpenApi", updateOpenApi)
+    inputs.property("updateOpenApi", updateOpenApi)
+    // 仕様書が変わったらテストをやり直す（最新のテスト結果を使い回して古い仕様書を見逃さないように）
+    inputs.files(rootProject.file("../docs/openapi.json")).withPropertyName("openApiSpec")
 }
 
 // ローカルで bootRun するときは開発用の設定（application-local.yml）を使う

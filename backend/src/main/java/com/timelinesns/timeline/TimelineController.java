@@ -4,6 +4,8 @@ import com.timelinesns.common.Viewer;
 import com.timelinesns.post.PostQuery;
 import com.timelinesns.post.PostQuery.Timeline;
 import com.timelinesns.post.PostResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 一覧はカーソル方式（{@code ?cursor=<前のページの最後の id>&limit=20}）。
  * 全体タイムラインはゲストも見られる（SecurityConfig で許可している）。
  */
+@Tag(name = "タイムライン")
 @RestController
 @RequestMapping("/api/timeline")
 public class TimelineController {
@@ -29,6 +32,7 @@ public class TimelineController {
         this.query = query;
     }
 
+    @Operation(summary = "全体タイムライン", description = "全ユーザーの投稿を新しい順に返す")
     @GetMapping("/global")
     @Transactional(readOnly = true)
     public PageResponse<PostResponse> global(@AuthenticationPrincipal @Nullable Jwt jwt,
@@ -37,6 +41,7 @@ public class TimelineController {
         return page(Timeline.GLOBAL, Viewer.idOrNull(jwt), cursor, limit);
     }
 
+    @Operation(summary = "ホームタイムライン", description = "自分とフォロー中のユーザーの投稿を新しい順に返す")
     @GetMapping("/home")
     @Transactional(readOnly = true)
     public PageResponse<PostResponse> home(@AuthenticationPrincipal Jwt jwt,
@@ -45,12 +50,14 @@ public class TimelineController {
         return page(Timeline.HOME, Viewer.id(jwt), cursor, limit);
     }
 
+    @Operation(summary = "全体タイムラインの新着件数", description = "since（表示中の一番新しい投稿の id）より新しい投稿の数")
     @GetMapping("/global/new-count")
     @Transactional(readOnly = true)
     public NewCountResponse globalNewCount(@AuthenticationPrincipal @Nullable Jwt jwt, @RequestParam UUID since) {
         return new NewCountResponse(query.countNewer(Timeline.GLOBAL, Viewer.idOrNull(jwt), since));
     }
 
+    @Operation(summary = "ホームタイムラインの新着件数", description = "since（表示中の一番新しい投稿の id）より新しい投稿の数")
     @GetMapping("/home/new-count")
     @Transactional(readOnly = true)
     public NewCountResponse homeNewCount(@AuthenticationPrincipal Jwt jwt, @RequestParam UUID since) {

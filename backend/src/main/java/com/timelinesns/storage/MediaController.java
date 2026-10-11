@@ -1,6 +1,11 @@
 package com.timelinesns.storage;
 
 import com.timelinesns.common.ApiException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Duration;
 import java.util.regex.Pattern;
 import org.springframework.http.CacheControl;
@@ -16,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * キーは保存のたびに新しく作り、同じキーの中身は変わらないので、ブラウザに長くキャッシュさせる。
  * 本番で CloudFront から直接配信するようにしたら、この API は使われなくなる（app.storage.public-base-url）。
  */
+@Tag(name = "画像")
 @RestController
 public class MediaController {
 
@@ -29,6 +35,9 @@ public class MediaController {
         this.storage = storage;
     }
 
+    @Operation(summary = "画像の配信", description = "各応答の avatarUrl・images の URL。キーは保存のたびに変わるので長期キャッシュする")
+    @ApiResponse(responseCode = "200", description = "画像",
+            content = @Content(mediaType = "image/*", schema = @Schema(type = "string", format = "binary")))
     @GetMapping("/api/media/{*key}")
     public ResponseEntity<byte[]> get(@PathVariable String key) {
         // {*key} は先頭の / を含む
