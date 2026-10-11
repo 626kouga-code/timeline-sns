@@ -2,6 +2,9 @@ package com.timelinesns.notification;
 
 import com.timelinesns.common.Viewer;
 import com.timelinesns.timeline.PageResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 通知一覧（F-50）・未読数と既読化（F-51）。どれもログインが必要。
  */
+@Tag(name = "通知")
 @RestController
 @RequestMapping("/api/notifications")
 public class NotificationController {
@@ -28,6 +32,7 @@ public class NotificationController {
         this.notifications = notifications;
     }
 
+    @Operation(summary = "通知一覧", description = "新しい順。種類は LIKE / COMMENT / REPLY / FOLLOW")
     @GetMapping
     @Transactional(readOnly = true)
     public PageResponse<NotificationResponse> list(@AuthenticationPrincipal Jwt jwt,
@@ -40,6 +45,7 @@ public class NotificationController {
     /**
      * 未読の数（100 件で打ち切る）。
      */
+    @Operation(summary = "未読数", description = "100 件で打ち切る")
     @GetMapping("/unread-count")
     @Transactional(readOnly = true)
     public UnreadCountResponse unreadCount(@AuthenticationPrincipal Jwt jwt) {
@@ -49,6 +55,8 @@ public class NotificationController {
     /**
      * 既読にする。{@code until}（画面に表示した一番新しい通知）を渡すと、それ以前だけを既読にする。
      */
+    @Operation(summary = "既読にする", description = "until（画面に表示した一番新しい通知）を渡すと、それ以前だけを既読にする")
+    @ApiResponse(responseCode = "204", description = "既読にした")
     @PostMapping("/read")
     @Transactional
     public ResponseEntity<Void> markRead(@AuthenticationPrincipal Jwt jwt,

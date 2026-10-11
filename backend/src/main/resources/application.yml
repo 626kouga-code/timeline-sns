@@ -19,6 +19,18 @@ spring:
       max-file-size: 5MB
       max-request-size: 25MB
 
+springdoc:
+  # API 仕様書（/v3/api-docs）と Swagger UI は本番では出さない。ローカルとテストの設定で有効にする
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+  paths-to-match: /api/**
+  default-produces-media-type: application/json
+  # docs/openapi.json の差分が読みやすいように、キーの順を固定して整形する
+  writer-with-order-by-keys: true
+  writer-with-default-pretty-printer: true
+
 server:
   # ポートは固定。埋まっていても別ポートには移らない（.claude/skills/dev-server-ports）
   port: 8080

@@ -11,7 +11,7 @@
 | バックエンド | Java | 25（LTS） | |
 | | Spring Boot | 4.1.x | Spring Framework 7。サポートは 2027-07 まで |
 | | Gradle | 9.x | Kotlin DSL |
-| | 主なライブラリ | — | Spring Security（JWT。Google ログイン用の OAuth2 Client は Could）、Spring Data JPA、Flyway、Bean Validation、AWS SDK for Java v2（S3。SES はメール送信を作るときに使う） |
+| | 主なライブラリ | — | Spring Security（JWT。Google ログイン用の OAuth2 Client は Could）、Spring Data JPA、Flyway、Bean Validation、AWS SDK for Java v2（S3。SES はメール送信を作るときに使う）、springdoc-openapi（API 仕様書の自動生成と Swagger UI。ローカルとテストだけで有効） |
 | データベース | PostgreSQL | 18.x | |
 | フロントエンド | React | 19.x | |
 | | TypeScript | 7.0.x | 導入時に ESLint などの対応状況を確認し、問題があれば 5.x/6.x 系に下げる |

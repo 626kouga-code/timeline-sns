@@ -3,6 +3,13 @@ app:
   auth:
     jwt-secret: local-development-secret-do-not-use-in-production
 
+# Swagger UI: http://localhost:8080/swagger-ui.html
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
 logging:
   level:
     com.timelinesns: DEBUG

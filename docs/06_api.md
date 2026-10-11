@@ -4,6 +4,16 @@
 
 REST（JSON）で提供する。一覧は `?cursor=<最後のid>&limit=20` のカーソル方式でページングする。
 
+## 詳細な仕様（自動生成）
+
+下の表は概要。パラメーター・リクエスト・レスポンスの詳細は、コードから自動生成した OpenAPI 仕様書 [openapi.json](openapi.json) を見る。
+
+- **Swagger UI**: バックエンドをローカルで起動（`./gradlew bootRun`）し、http://localhost:8080/swagger-ui.html を開く。右上の「Authorize」にログイン API で受け取ったアクセストークンを入れると、ログインが必要な API も試せる。本番では仕様書も Swagger UI も無効にしている
+- **更新のしかた**: コントローラーや DTO を変えたら、`backend/` で `./gradlew test -PupdateOpenApi` を実行し、更新された `docs/openapi.json` も一緒にコミットする。古いままだと `./gradlew check`（OpenApiSpecTest）が失敗する
+- **説明の書き方**: 各 API の説明は、コントローラーの `@Tag`（グループ名）と `@Operation`（概要・説明）に書く。201・204 を返す API は `@ApiResponse` で状態コードを示す
+
+## 一覧
+
 | 分類 | メソッドとパス | 概要 |
 | --- | --- | --- |
 | 認証 | `POST /api/auth/signup` | 新規登録 |

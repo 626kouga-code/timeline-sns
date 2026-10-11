@@ -1,0 +1,1475 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "description" : "タイムライン型 SNS の API。概要は docs/06_api.md を参照",
+    "title" : "timeline-sns API",
+    "version" : "v1"
+  },
+  "servers" : [ {
+    "url" : "/"
+  } ],
+  "security" : [ {
+    "bearerAuth" : [ ]
+  } ],
+  "paths" : {
+    "/api/auth/login" : {
+      "post" : {
+        "description" : "アクセストークンを返し、リフレッシュトークンを Cookie に設定する",
+        "operationId" : "login",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ ],
+        "summary" : "ログイン",
+        "tags" : [ "認証" ]
+      }
+    },
+    "/api/auth/logout" : {
+      "post" : {
+        "description" : "リフレッシュトークンを無効にし、Cookie を消す",
+        "operationId" : "logout",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "refresh_token",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "ログアウトした"
+          }
+        },
+        "security" : [ ],
+        "summary" : "ログアウト",
+        "tags" : [ "認証" ]
+      }
+    },
+    "/api/auth/refresh" : {
+      "post" : {
+        "description" : "Cookie のリフレッシュトークンで、アクセストークンとリフレッシュトークンを作り直す",
+        "operationId" : "refresh",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "refresh_token",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ ],
+        "summary" : "トークンの再発行",
+        "tags" : [ "認証" ]
+      }
+    },
+    "/api/auth/signup" : {
+      "post" : {
+        "description" : "アクセストークンを返し、リフレッシュトークンを Cookie に設定する",
+        "operationId" : "signup",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SignupRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description" : "登録した"
+          }
+        },
+        "security" : [ ],
+        "summary" : "新規登録",
+        "tags" : [ "認証" ]
+      }
+    },
+    "/api/comments/{id}" : {
+      "delete" : {
+        "description" : "本人のみ。返信が付いていれば論理削除、なければ物理削除する",
+        "operationId" : "delete_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "削除した"
+          }
+        },
+        "summary" : "コメント削除",
+        "tags" : [ "コメント" ]
+      }
+    },
+    "/api/me" : {
+      "get" : {
+        "operationId" : "me",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "自分の情報",
+        "tags" : [ "自分" ]
+      },
+      "patch" : {
+        "description" : "displayName と bio を両方送る。変更後の自分の情報を返す",
+        "operationId" : "update",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "プロフィール編集",
+        "tags" : [ "自分" ]
+      }
+    },
+    "/api/me/avatar" : {
+      "delete" : {
+        "operationId" : "removeAvatar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "アイコン画像の削除",
+        "tags" : [ "自分" ]
+      },
+      "put" : {
+        "description" : "正方形に切り抜いた画像（JPEG / PNG / WebP / GIF、5MB まで）を file で送る。サーバーで 400×400 に作り直す",
+        "operationId" : "changeAvatar",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "file" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  }
+                },
+                "required" : [ "file" ]
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "アイコン画像の変更",
+        "tags" : [ "自分" ]
+      }
+    },
+    "/api/media/{key}" : {
+      "get" : {
+        "description" : "各応答の avatarUrl・images の URL。キーは保存のたびに変わるので長期キャッシュする",
+        "operationId" : "get_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "key",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "image/*" : {
+                "schema" : {
+                  "type" : "string",
+                  "format" : "binary"
+                }
+              }
+            },
+            "description" : "画像"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "画像の配信",
+        "tags" : [ "画像" ]
+      }
+    },
+    "/api/notifications" : {
+      "get" : {
+        "description" : "新しい順。種類は LIKE / COMMENT / REPLY / FOLLOW",
+        "operationId" : "list_1",
+        "parameters" : [ {
+          "description" : "前のページの最後の id（応答の nextCursor）。省略すると先頭から",
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "description" : "1 ページの件数（1〜50）",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseNotificationResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "通知一覧",
+        "tags" : [ "通知" ]
+      }
+    },
+    "/api/notifications/read" : {
+      "post" : {
+        "description" : "until（画面に表示した一番新しい通知）を渡すと、それ以前だけを既読にする",
+        "operationId" : "markRead",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MarkReadRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "204" : {
+            "description" : "既読にした"
+          }
+        },
+        "summary" : "既読にする",
+        "tags" : [ "通知" ]
+      }
+    },
+    "/api/notifications/unread-count" : {
+      "get" : {
+        "description" : "100 件で打ち切る",
+        "operationId" : "unreadCount",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UnreadCountResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "未読数",
+        "tags" : [ "通知" ]
+      }
+    },
+    "/api/posts" : {
+      "post" : {
+        "description" : "本文と画像 0〜4 枚（JPEG / PNG / WebP / GIF、1 枚 5MB まで）。画像があれば本文は空でもよい",
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreatePostRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PostResponse"
+                }
+              }
+            },
+            "description" : "作成した"
+          }
+        },
+        "summary" : "投稿作成",
+        "tags" : [ "投稿" ]
+      }
+    },
+    "/api/posts/{id}" : {
+      "delete" : {
+        "description" : "本人のみ。保存先の画像も消す",
+        "operationId" : "delete",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "削除した"
+          }
+        },
+        "summary" : "投稿削除",
+        "tags" : [ "投稿" ]
+      },
+      "get" : {
+        "operationId" : "get",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PostResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "投稿の取得",
+        "tags" : [ "投稿" ]
+      }
+    },
+    "/api/posts/{postId}/comments" : {
+      "get" : {
+        "description" : "全件を古い順の平らな配列で返す。スレッドは画面で組み立てる",
+        "operationId" : "list",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "postId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/CommentResponse"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "コメント一覧",
+        "tags" : [ "コメント" ]
+      },
+      "post" : {
+        "description" : "parentId を指定すると、そのコメントへの返信になる",
+        "operationId" : "create_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "postId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateCommentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CommentResponse"
+                }
+              }
+            },
+            "description" : "作成した"
+          }
+        },
+        "summary" : "コメント作成",
+        "tags" : [ "コメント" ]
+      }
+    },
+    "/api/posts/{postId}/likes" : {
+      "delete" : {
+        "description" : "冪等",
+        "operationId" : "unlike",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "postId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LikeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "いいね取り消し",
+        "tags" : [ "いいね" ]
+      },
+      "post" : {
+        "description" : "冪等",
+        "operationId" : "like",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "postId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LikeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "いいね",
+        "tags" : [ "いいね" ]
+      }
+    },
+    "/api/search/users" : {
+      "get" : {
+        "description" : "q（1〜50 文字）でユーザーID・表示名を部分一致検索する。大文字小文字は区別しない。並びはユーザーIDの完全一致 → 前方一致 → それ以外",
+        "operationId" : "users",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "前のページの最後の id（応答の nextCursor）。省略すると先頭から",
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "description" : "1 ページの件数（1〜50）",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseUserSummaryResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "ユーザー検索",
+        "tags" : [ "ユーザー" ]
+      }
+    },
+    "/api/timeline/global" : {
+      "get" : {
+        "description" : "全ユーザーの投稿を新しい順に返す",
+        "operationId" : "global",
+        "parameters" : [ {
+          "description" : "前のページの最後の id（応答の nextCursor）。省略すると先頭から",
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "description" : "1 ページの件数（1〜50）",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponsePostResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "全体タイムライン",
+        "tags" : [ "タイムライン" ]
+      }
+    },
+    "/api/timeline/global/new-count" : {
+      "get" : {
+        "description" : "since（表示中の一番新しい投稿の id）より新しい投稿の数",
+        "operationId" : "globalNewCount",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "since",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NewCountResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "全体タイムラインの新着件数",
+        "tags" : [ "タイムライン" ]
+      }
+    },
+    "/api/timeline/home" : {
+      "get" : {
+        "description" : "自分とフォロー中のユーザーの投稿を新しい順に返す",
+        "operationId" : "home",
+        "parameters" : [ {
+          "description" : "前のページの最後の id（応答の nextCursor）。省略すると先頭から",
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "description" : "1 ページの件数（1〜50）",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponsePostResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "ホームタイムライン",
+        "tags" : [ "タイムライン" ]
+      }
+    },
+    "/api/timeline/home/new-count" : {
+      "get" : {
+        "description" : "since（表示中の一番新しい投稿の id）より新しい投稿の数",
+        "operationId" : "homeNewCount",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "since",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NewCountResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "ホームタイムラインの新着件数",
+        "tags" : [ "タイムライン" ]
+      }
+    },
+    "/api/users/{handle}" : {
+      "get" : {
+        "description" : "フォロー数・フォロワー数と、閲覧者との関係を含む。凍結ユーザーは 404",
+        "operationId" : "profile",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "handle",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "プロフィール",
+        "tags" : [ "ユーザー" ]
+      }
+    },
+    "/api/users/{handle}/follow" : {
+      "delete" : {
+        "description" : "冪等",
+        "operationId" : "unfollow",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "handle",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FollowResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "フォロー解除",
+        "tags" : [ "フォロー" ]
+      },
+      "put" : {
+        "description" : "冪等。自分自身は 400、ブロック関係にある相手は 403",
+        "operationId" : "follow",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "handle",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FollowResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "フォロー",
+        "tags" : [ "フォロー" ]
+      }
+    },
+    "/api/users/{handle}/followers" : {
+      "get" : {
+        "description" : "フォローされた日時の新しい順",
+        "operationId" : "followers",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "handle",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "前のページの最後の id（応答の nextCursor）。省略すると先頭から",
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "description" : "1 ページの件数（1〜50）",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseUserSummaryResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "フォロワー一覧",
+        "tags" : [ "ユーザー" ]
+      }
+    },
+    "/api/users/{handle}/following" : {
+      "get" : {
+        "description" : "フォローした日時の新しい順",
+        "operationId" : "following",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "handle",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "前のページの最後の id（応答の nextCursor）。省略すると先頭から",
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "description" : "1 ページの件数（1〜50）",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponseUserSummaryResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "フォロー一覧",
+        "tags" : [ "ユーザー" ]
+      }
+    },
+    "/api/users/{handle}/posts" : {
+      "get" : {
+        "description" : "閲覧者とブロック関係にあれば空",
+        "operationId" : "posts",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "handle",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "前のページの最後の id（応答の nextCursor）。省略すると先頭から",
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "description" : "1 ページの件数（1〜50）",
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponsePostResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "ユーザーの投稿一覧",
+        "tags" : [ "ユーザー" ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "AuthResponse" : {
+        "type" : "object",
+        "properties" : {
+          "accessToken" : {
+            "type" : "string"
+          },
+          "expiresIn" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "tokenType" : {
+            "type" : "string"
+          },
+          "user" : {
+            "$ref" : "#/components/schemas/MeResponse"
+          }
+        }
+      },
+      "Author" : {
+        "type" : "object",
+        "properties" : {
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "handle" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
+      "Comment" : {
+        "type" : "object",
+        "properties" : {
+          "body" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
+      "CommentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "author" : {
+            "$ref" : "#/components/schemas/Author"
+          },
+          "body" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "deleted" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "parentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
+      "CreateCommentRequest" : {
+        "type" : "object",
+        "properties" : {
+          "body" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "parentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "body" ]
+      },
+      "CreatePostRequest" : {
+        "type" : "object",
+        "properties" : {
+          "body" : {
+            "type" : "string"
+          },
+          "images" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "binary"
+            },
+            "maxItems" : 4,
+            "minItems" : 0
+          }
+        }
+      },
+      "FollowResponse" : {
+        "type" : "object",
+        "properties" : {
+          "followerCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "following" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "Image" : {
+        "type" : "object",
+        "properties" : {
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "thumbnailUrl" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "LikeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "likeCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "liked" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "LoginRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "password" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "email", "password" ]
+      },
+      "MarkReadRequest" : {
+        "type" : "object",
+        "properties" : {
+          "until" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
+      "MeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "bio" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "emailVerified" : {
+            "type" : "boolean"
+          },
+          "handle" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "USER", "ADMIN" ]
+          }
+        }
+      },
+      "NewCountResponse" : {
+        "type" : "object",
+        "properties" : {
+          "count" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "NotificationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "actor" : {
+            "$ref" : "#/components/schemas/Author"
+          },
+          "comment" : {
+            "$ref" : "#/components/schemas/Comment"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "post" : {
+            "$ref" : "#/components/schemas/Post"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "unread" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PageResponseNotificationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/NotificationResponse"
+            }
+          },
+          "nextCursor" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
+      "PageResponsePostResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PostResponse"
+            }
+          },
+          "nextCursor" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
+      "PageResponseUserSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserSummaryResponse"
+            }
+          },
+          "nextCursor" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
+      "Post" : {
+        "type" : "object",
+        "properties" : {
+          "body" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "thumbnailUrl" : {
+            "type" : "string"
+          }
+        }
+      },
+      "PostResponse" : {
+        "type" : "object",
+        "properties" : {
+          "author" : {
+            "$ref" : "#/components/schemas/Author"
+          },
+          "body" : {
+            "type" : "string"
+          },
+          "commentCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "images" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Image"
+            }
+          },
+          "likeCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "liked" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "ProfileResponse" : {
+        "type" : "object",
+        "properties" : {
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "bio" : {
+            "type" : "string"
+          },
+          "blockedBy" : {
+            "type" : "boolean"
+          },
+          "blocking" : {
+            "type" : "boolean"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "followedBy" : {
+            "type" : "boolean"
+          },
+          "followerCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "following" : {
+            "type" : "boolean"
+          },
+          "followingCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "handle" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "postCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "SignupRequest" : {
+        "type" : "object",
+        "properties" : {
+          "agreedToTerms" : {
+            "type" : "boolean"
+          },
+          "displayName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "email" : {
+            "type" : "string",
+            "format" : "email",
+            "maxLength" : 254,
+            "minLength" : 0
+          },
+          "handle" : {
+            "type" : "string",
+            "pattern" : "^[A-Za-z0-9_]{3,15}$"
+          },
+          "password" : {
+            "type" : "string",
+            "maxLength" : 72,
+            "minLength" : 8
+          }
+        },
+        "required" : [ "displayName", "email", "handle", "password" ]
+      },
+      "UnreadCountResponse" : {
+        "type" : "object",
+        "properties" : {
+          "count" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "UpdateProfileRequest" : {
+        "type" : "object",
+        "properties" : {
+          "bio" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "bio", "displayName" ]
+      },
+      "UserSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "bio" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "followedBy" : {
+            "type" : "boolean"
+          },
+          "following" : {
+            "type" : "boolean"
+          },
+          "handle" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      }
+    },
+    "securitySchemes" : {
+      "bearerAuth" : {
+        "bearerFormat" : "JWT",
+        "description" : "ログイン API で受け取ったアクセストークン",
+        "scheme" : "bearer",
+        "type" : "http"
+      }
+    }
+  }
+}

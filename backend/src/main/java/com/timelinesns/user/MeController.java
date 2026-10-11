@@ -3,6 +3,8 @@ package com.timelinesns.user;
 import com.timelinesns.common.ApiException;
 import com.timelinesns.common.Viewer;
 import com.timelinesns.storage.MediaUrls;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+@Tag(name = "自分")
 @RestController
 @RequestMapping("/api/me")
 public class MeController {
@@ -34,6 +37,7 @@ public class MeController {
         this.mediaUrls = mediaUrls;
     }
 
+    @Operation(summary = "自分の情報")
     @GetMapping
     @Transactional(readOnly = true)
     public MeResponse me(@AuthenticationPrincipal Jwt jwt) {
@@ -43,6 +47,7 @@ public class MeController {
     /**
      * プロフィール編集（F-41）。変更後の本人の情報を返す。
      */
+    @Operation(summary = "プロフィール編集", description = "displayName と bio を両方送る。変更後の自分の情報を返す")
     @PatchMapping
     @Transactional
     public MeResponse update(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody UpdateProfileRequest request) {
@@ -54,12 +59,15 @@ public class MeController {
     /**
      * アイコン画像の変更（F-41）。画面で正方形に切り抜いた画像を multipart の {@code file} で受け取る。
      */
+    @Operation(summary = "アイコン画像の変更", description = "正方形に切り抜いた画像（JPEG / PNG / WebP / GIF、5MB まで）を "
+            + "file で送る。サーバーで 400×400 に作り直す")
     @PutMapping(path = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public MeResponse changeAvatar(@AuthenticationPrincipal Jwt jwt, @RequestPart("file") MultipartFile file)
             throws IOException {
         return avatars.change(Viewer.id(jwt), file.getBytes());
     }
 
+    @Operation(summary = "アイコン画像の削除")
     @DeleteMapping("/avatar")
     public MeResponse removeAvatar(@AuthenticationPrincipal Jwt jwt) {
         return avatars.remove(Viewer.id(jwt));

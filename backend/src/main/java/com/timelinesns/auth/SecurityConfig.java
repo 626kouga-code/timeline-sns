@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.util.List;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.context.annotation.Bean;
@@ -43,6 +44,17 @@ public class SecurityConfig {
 
     private static final int MIN_SECRET_BYTES = 32;
 
+    /** ログインなしで呼ぶ API（POST）。API 仕様書（OpenApiConfig）でも認証なしとして載せる。 */
+    static final List<String> PUBLIC_POST_PATHS = List.of(
+            "/api/auth/signup", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout");
+
+    /**
+     * ゲストも閲覧できる API（GET。docs/04 の「ログイン不要」の画面で使うもの）。
+     * ログインしていれば閲覧者に合わせた内容を返すので、API 仕様書では認証を任意として載せる。
+     */
+    static final List<String> GUEST_GET_PATHS = List.of(
+            "/api/timeline/global/**", "/api/posts/**", "/api/users/**", "/api/search/**", "/api/media/**");
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -52,17 +64,14 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/auth/signup", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout")
-                        .permitAll()
-                        // ゲストも閲覧できる API（docs/04 の「ログイン不要」の画面で使うもの）
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/timeline/global/**", "/api/posts/**", "/api/users/**", "/api/search/**",
-                                "/api/media/**")
-                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, PUBLIC_POST_PATHS.toArray(String[]::new)).permitAll()
+                        .requestMatchers(HttpMethod.GET, GUEST_GET_PATHS.toArray(String[]::new)).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/error").permitAll()
+                        // API 仕様書と Swagger UI。springdoc を有効にしているローカルとテストにしかない（application.yml）
+                        .requestMatchers(HttpMethod.GET, "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
+                        .permitAll()
                         .anyRequest().denyAll())
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
