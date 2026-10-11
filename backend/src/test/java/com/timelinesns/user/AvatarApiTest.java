@@ -1,5 +1,9 @@
 package com.timelinesns.user;
 
+import static com.timelinesns.support.TestImages.image;
+import static com.timelinesns.support.TestImages.read;
+import static com.timelinesns.support.TestImages.resource;
+import static com.timelinesns.support.TestImages.withOrientation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
@@ -15,16 +19,9 @@ import com.timelinesns.auth.AccessTokenService;
 import com.timelinesns.support.Fixtures;
 import com.timelinesns.support.IntegrationTest;
 import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import java.util.UUID;
-import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -250,58 +247,5 @@ class AvatarApiTest {
 
     private byte[] fetch(String url) throws Exception {
         return mvc.perform(get(url)).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-    }
-
-    private static BufferedImage read(byte[] bytes) throws IOException {
-        return Objects.requireNonNull(ImageIO.read(new ByteArrayInputStream(bytes)));
-    }
-
-    private static byte[] resource(String path) throws IOException {
-        try (InputStream in = AvatarApiTest.class.getResourceAsStream(path)) {
-            return Objects.requireNonNull(in).readAllBytes();
-        }
-    }
-
-    /**
-     * 左半分が赤・右半分が青の画像。{@code transparent} なら右下を透明にする。
-     */
-    private static byte[] image(String format, int width, int height, boolean transparent) throws IOException {
-        int type = transparent ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
-        BufferedImage image = new BufferedImage(width, height, type);
-        Graphics2D g = image.createGraphics();
-        try {
-            g.setColor(Color.RED);
-            g.fillRect(0, 0, width / 2, height);
-            g.setColor(Color.BLUE);
-            g.fillRect(width / 2, 0, width - width / 2, height);
-        } finally {
-            g.dispose();
-        }
-        if (transparent) {
-            image.setRGB(width - 1, height - 1, 0x00000000);
-        }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ImageIO.write(image, format, out);
-        return out.toByteArray();
-    }
-
-    /**
-     * JPEG の先頭（SOI の直後）に、Orientation だけを持つ Exif（APP1）を差し込む。
-     */
-    private static byte[] withOrientation(byte[] jpeg, int orientation) {
-        byte[] app1 = {
-            (byte) 0xFF, (byte) 0xE1, 0x00, 0x22,                // APP1、長さ 34 バイト（長さ自身を含む）
-            'E', 'x', 'i', 'f', 0x00, 0x00,
-            'M', 'M', 0x00, 0x2A, 0x00, 0x00, 0x00, 0x08,        // TIFF ヘッダ（ビッグエンディアン、IFD0 は 8 バイト目）
-            0x00, 0x01,                                          // IFD0 の項目数 1
-            0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01,      // Orientation（0x0112）、SHORT、1 個
-            0x00, (byte) orientation, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,                              // 次の IFD なし
-        };
-        byte[] out = new byte[jpeg.length + app1.length];
-        System.arraycopy(jpeg, 0, out, 0, 2);
-        System.arraycopy(app1, 0, out, 2, app1.length);
-        System.arraycopy(jpeg, 2, out, 2 + app1.length, jpeg.length - 2);
-        return out;
     }
 }

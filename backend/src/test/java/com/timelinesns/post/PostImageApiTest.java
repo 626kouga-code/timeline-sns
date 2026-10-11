@@ -1,5 +1,10 @@
 package com.timelinesns.post;
 
+import static com.timelinesns.support.TestImages.animatedGif;
+import static com.timelinesns.support.TestImages.frames;
+import static com.timelinesns.support.TestImages.image;
+import static com.timelinesns.support.TestImages.read;
+import static com.timelinesns.support.TestImages.withOrientation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.endsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -15,22 +20,9 @@ import com.timelinesns.support.Fixtures;
 import com.timelinesns.support.IntegrationTest;
 import com.timelinesns.support.QueryCounter;
 import com.timelinesns.user.UserRepository;
-import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -134,7 +126,7 @@ class PostImageApiTest {
 
         @Test
         void stripsExif() throws Exception {
-            byte[] jpeg = withExifComment(image("jpeg", 100, 100));
+            byte[] jpeg = withOrientation(image("jpeg", 100, 100), 1);
             assertThat(new String(jpeg, StandardCharsets.ISO_8859_1)).contains("Exif");
 
             String json = create(null, jpeg).andReturn().getResponse().getContentAsString();
@@ -232,77 +224,5 @@ class PostImageApiTest {
     private long count(String table) {
         Long count = jdbc.queryForObject("SELECT count(*) FROM " + table, Long.class);
         return count == null ? 0 : count;
-    }
-
-    private static BufferedImage read(byte[] bytes) throws IOException {
-        return Objects.requireNonNull(ImageIO.read(new ByteArrayInputStream(bytes)));
-    }
-
-    private static byte[] image(String format, int width, int height) throws IOException {
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = image.createGraphics();
-        try {
-            g.setColor(Color.ORANGE);
-            g.fillRect(0, 0, width, height);
-        } finally {
-            g.dispose();
-        }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ImageIO.write(image, format, out);
-        return out.toByteArray();
-    }
-
-    // コマ数 frames の GIF アニメーション（コマごとに色を変える）
-    private static byte[] animatedGif(int frames) throws IOException {
-        ImageWriter writer = ImageIO.getImageWritersByFormatName("gif").next();
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        try (ImageOutputStream out = ImageIO.createImageOutputStream(bytes)) {
-            writer.setOutput(out);
-            writer.prepareWriteSequence(null);
-            for (Color color : List.of(Color.RED, Color.GREEN, Color.BLUE).subList(0, frames)) {
-                BufferedImage frame = new BufferedImage(40, 30, BufferedImage.TYPE_INT_RGB);
-                Graphics2D g = frame.createGraphics();
-                g.setColor(color);
-                g.fillRect(0, 0, 40, 30);
-                g.dispose();
-                writer.writeToSequence(new IIOImage(frame, null, null), null);
-            }
-            writer.endWriteSequence();
-        } finally {
-            writer.dispose();
-        }
-        return bytes.toByteArray();
-    }
-
-    private static int frames(byte[] gif) throws IOException {
-        try (ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(gif))) {
-            ImageReader reader = ImageIO.getImageReaders(in).next();
-            try {
-                reader.setInput(in);
-                return reader.getNumImages(true);
-            } finally {
-                reader.dispose();
-            }
-        }
-    }
-
-    /**
-     * JPEG の先頭（SOI の直後）に、Orientation（= 1、そのまま）だけを持つ Exif（APP1）を差し込む。
-     */
-    private static byte[] withExifComment(byte[] jpeg) {
-        byte[] app1 = {
-            (byte) 0xFF, (byte) 0xE1, 0x00, 0x22,
-            'E', 'x', 'i', 'f', 0x00, 0x00,
-            'M', 'M', 0x00, 0x2A, 0x00, 0x00, 0x00, 0x08,
-            0x00, 0x01,
-            0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01,
-            0x00, 0x01, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-        };
-        byte[] out = new byte[jpeg.length + app1.length];
-        System.arraycopy(jpeg, 0, out, 0, 2);
-        System.arraycopy(app1, 0, out, 2, app1.length);
-        System.arraycopy(jpeg, 2, out, 2 + app1.length, jpeg.length - 2);
-        return out;
     }
 }
