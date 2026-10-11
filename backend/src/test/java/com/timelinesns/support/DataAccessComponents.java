@@ -2,6 +2,7 @@ package com.timelinesns.support;
 
 import com.timelinesns.comment.CommentQuery;
 import com.timelinesns.notification.NotificationQuery;
+import com.timelinesns.notification.NotificationService;
 import com.timelinesns.post.PostQuery;
 import com.timelinesns.storage.MediaUrls;
 import com.timelinesns.storage.ObjectStorage;
@@ -20,7 +21,7 @@ import org.springframework.context.annotation.Import;
 @TestConfiguration(proxyBeanMethods = false)
 // スライステストでは @ConfigurationPropertiesScan が効かないので、使う設定だけ読み込む
 @EnableConfigurationProperties(StorageProperties.class)
-@Import({UserQuery.class, PostQuery.class, CommentQuery.class, NotificationQuery.class, MediaUrls.class,
-        S3Config.class, ObjectStorage.class, StorageCleanup.class})
+@Import({UserQuery.class, PostQuery.class, CommentQuery.class, NotificationQuery.class, NotificationService.class,
+        MediaUrls.class, S3Config.class, ObjectStorage.class, StorageCleanup.class})
 public class DataAccessComponents {
 }
