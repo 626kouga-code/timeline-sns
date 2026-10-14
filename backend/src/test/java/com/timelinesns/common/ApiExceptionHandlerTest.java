@@ -1,5 +1,6 @@
 package com.timelinesns.common;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -10,13 +11,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
  * 例外から API のエラー応答（application/problem+json）への変換（ApiExceptionHandler）。
  * Spring のコンテキストは起動せず、テスト用のコントローラーで各例外を起こして応答の形を確かめる。
  */
+@ExtendWith(OutputCaptureExtension.class)
 class ApiExceptionHandlerTest {
 
     private MockMvc mvc;
@@ -89,6 +96,32 @@ class ApiExceptionHandlerTest {
         String tooLarge() {
             throw new MaxUploadSizeExceededException(5 * 1024 * 1024);
         }
+
+        @GetMapping("/unexpected")
+        String unexpected() {
+            throw new IllegalStateException("internal detail: db password=xxx");
+        }
+    }
+
+    @Test
+    void unexpectedExceptionIsLoggedAndBecomesInternalErrorWithRequestId(CapturedOutput output) throws Exception {
+        MockMvc withRequestId = MockMvcBuilders.standaloneSetup(new FailingController())
+                .setControllerAdvice(new ApiExceptionHandler())
+                .addFilters(new RequestLoggingFilter())
+                .build();
+
+        MvcResult result = withRequestId.perform(get("/unexpected"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
+                .andExpect(jsonPath("$.detail").value("サーバーでエラーが発生しました。時間をおいてもう一度お試しください"))
+                .andReturn();
+
+        String requestId = result.getResponse().getHeader(RequestLoggingFilter.REQUEST_ID_HEADER);
+        assertThat(result.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                .contains("\"requestId\":\"" + requestId + "\"")
+                .doesNotContain("internal detail");
+        // 原因を調べられるよう、ログにはスタックトレースが出る
+        assertThat(output).contains("ERROR").contains("IllegalStateException: internal detail");
     }
 
     @Test
