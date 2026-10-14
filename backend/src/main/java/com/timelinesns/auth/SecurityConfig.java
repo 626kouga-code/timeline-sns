@@ -1,5 +1,6 @@
 package com.timelinesns.auth;
 
+import com.timelinesns.common.UserIdLoggingFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +27,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -69,6 +71,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/error").permitAll()
+                        // ヘルスチェック（docs/10）。Actuator で公開しているのはこれだけ（application.yml）
+                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         // API 仕様書と Swagger UI。springdoc を有効にしているローカルとテストにしかない（application.yml）
                         .requestMatchers(HttpMethod.GET, "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
                         .permitAll()
@@ -78,7 +82,9 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint()))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint())
-                        .accessDeniedHandler(accessDeniedHandler()));
+                        .accessDeniedHandler(accessDeniedHandler()))
+                // ログにユーザー ID を付ける。トークンを検証した後でないと分からないので、その直後に置く
+                .addFilterAfter(new UserIdLoggingFilter(), BearerTokenAuthenticationFilter.class);
         return http.build();
     }
 

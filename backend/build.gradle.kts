@@ -20,6 +20,8 @@ repositories {
 }
 
 dependencies {
+    // ヘルスチェック（/actuator/health）。公開するエンドポイントは application.yml で health だけに絞る
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.springframework.boot:spring-boot-starter-security")

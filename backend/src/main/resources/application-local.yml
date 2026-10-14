@@ -13,3 +13,10 @@ springdoc:
 logging:
   level:
     com.timelinesns: DEBUG
+  # 本番の JSON（application.yml）をやめ、人が読みやすいテキストで出す
+  structured:
+    format:
+      console: ""
+  # レベルの後ろにリクエスト ID とユーザー ID を付ける（RequestLoggingFilter）
+  pattern:
+    level: "%5p [%X{requestId:-},%X{userId:-}]"

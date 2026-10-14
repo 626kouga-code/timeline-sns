@@ -3,6 +3,15 @@ app:
   auth:
     jwt-secret: test-secret-for-integration-tests-only-0123456789
 
+# テスト結果を読みやすいように、本番の JSON（application.yml）ではなくテキストで出す
+logging:
+  structured:
+    format:
+      console: ""
+  # レベルの後ろにリクエスト ID とユーザー ID を付ける（RequestLoggingFilter）
+  pattern:
+    level: "%5p [%X{requestId:-},%X{userId:-}]"
+
 # docs/openapi.json を作る・照合するため（OpenApiSpecTest）
 springdoc:
   api-docs:

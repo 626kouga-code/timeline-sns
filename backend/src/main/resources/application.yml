@@ -35,6 +35,23 @@ server:
   # ポートは固定。埋まっていても別ポートには移らない（.claude/skills/dev-server-ports）
   port: 8080
 
+# ログは JSON（ECS 形式）で標準出力に出し、CloudWatch Logs で集める（docs/10）。ローカルとテストはテキストに戻す
+logging:
+  structured:
+    format:
+      console: ecs
+
+# Actuator はヘルスチェックだけを公開する。応答は UP / DOWN だけにし、詳細は返さない
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+
 app:
   auth:
     # JWT の署名鍵（32 バイト以上）。本番は環境変数 JWT_SECRET で渡す。未設定なら起動に失敗する

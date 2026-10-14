@@ -2,6 +2,9 @@ package com.timelinesns.common;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
@@ -29,6 +32,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
     @ExceptionHandler(ApiException.class)
     ProblemDetail handleApiException(ApiException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
@@ -44,6 +49,23 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "データが競合しました。もう一度お試しください");
         problem.setProperty("code", "CONFLICT");
+        return problem;
+    }
+
+    /**
+     * ほかのどれにも当たらない想定外の例外。原因を調べられるようにスタックトレース付きで ERROR を出す（docs/10）。
+     * 例外のメッセージは内部の情報を含みうるので応答には入れず、問い合わせ用にリクエスト ID を返す。
+     */
+    @ExceptionHandler(Exception.class)
+    ProblemDetail handleUnexpected(Exception ex) {
+        LOG.error("想定外のエラーが発生しました", ex);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
+                "サーバーでエラーが発生しました。時間をおいてもう一度お試しください");
+        problem.setProperty("code", "INTERNAL_ERROR");
+        String requestId = MDC.get(RequestLoggingFilter.REQUEST_ID_KEY);
+        if (requestId != null) {
+            problem.setProperty("requestId", requestId);
+        }
         return problem;
     }
 

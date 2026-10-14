@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RefreshTokenService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(RefreshTokenService.class);
     private static final int TOKEN_BYTES = 32;
 
     private final RefreshTokenRepository tokens;
@@ -61,6 +64,8 @@ public class RefreshTokenService {
         if (current.isRevoked()) {
             // 失効済みのトークンが使われた＝盗まれた可能性がある。本人のセッションもすべて無効にする
             tokens.revokeAllByUserId(current.getUserId(), now);
+            LOG.warn("失効済みのリフレッシュトークンが使われたため、全セッションを無効にしました: userId={}",
+                    current.getUserId());
             throw invalid();
         }
         if (current.isExpired(now)) {
