@@ -1,0 +1,83 @@
+# パフォーマンステスト（k6）。任意のタイミングで手動実行する（Actions タブの「Run workflow」、
+# または `gh workflow run performance.yml -f scenario=smoke`）。PR やプッシュでは動かない。
+# ランナー上に PostgreSQL・S3Mock とバックエンドを立て、そこに負荷をかける。AWS には触らない。
+# 手順と結果の見方は docs/08 の「パフォーマンステスト」
+name: performance
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "smoke（動作確認・5 VU 30 秒）/ load（100 VU で約 4.5 分）"
+        type: choice
+        options: [smoke, load]
+        default: smoke
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # 負荷をかける前に、シナリオ（TypeScript）の型エラーで止める
+      - name: シナリオの型チェック
+        working-directory: perf
+        run: |
+          npm ci
+          npm run typecheck
+
+      - name: PostgreSQL と S3Mock を起動
+        run: docker compose up -d --wait postgres s3mock
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: バックエンドをビルド
+        working-directory: backend
+        run: ./gradlew bootJar --no-daemon
+
+      # プロファイルなし（本番と同じ設定）で起動する。local プロファイルは DEBUG ログが多く、計測が歪むため使わない。
+      # DB・S3 の接続先は application.yml の既定値（docker compose のポート）のまま
+      - name: バックエンドを起動
+        run: |
+          export JWT_SECRET="$(openssl rand -base64 48)"
+          jar=$(ls backend/build/libs/*.jar | grep -v -- '-plain.jar' | head -n1)
+          nohup java -jar "$jar" > backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fs http://localhost:8080/actuator/health | grep -q UP; then
+              echo "起動しました"; exit 0
+            fi
+            sleep 2
+          done
+          echo "バックエンドが起動しませんでした"; tail -n 100 backend.log; exit 1
+
+      - uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: "2.3.0"
+
+      - name: k6 を実行（${{ inputs.scenario }}）
+        env:
+          # グラフ付きの HTML レポートを書き出す（k6 の標準機能）
+          K6_WEB_DASHBOARD: "true"
+          K6_WEB_DASHBOARD_EXPORT: perf/results/report-${{ inputs.scenario }}.html
+        run: |
+          mkdir -p perf/results
+          k6 run -e SCENARIO=${{ inputs.scenario }} perf/timeline.ts
+
+      - name: 結果とログを保存
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: performance-${{ inputs.scenario }}-${{ github.run_number }}
+          path: |
+            perf/results/
+            backend.log
+          retention-days: 14
