@@ -1,0 +1,152 @@
+# CI。main 向けの PR の作成・更新と、main への push で自動的に動く（docs/09）。
+# 5 つのジョブを並列に流し、すべて成功しないと PR はマージできない（main のブランチ保護）。
+# 静的解析とテストは別のジョブにしているので、どちらかが落ちても、もう一方の結果は必ず出る。
+# パフォーマンステスト（k6・E2E の表示時間の判定）は対象外で、手動で実行する（performance.yml・e2e.yml）。
+# ジョブ名はブランチ保護の「必須のチェック」の名前になっているので、変えるときは保護の設定も直す。
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# 同じ PR（ブランチ）に続けて push したら、古い実行は取り消す
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # バックエンドの静的解析: Checkstyle（コーディング規約）・SpotBugs（バグになりやすいコード）
+  backend-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Checkstyle・SpotBugs
+        working-directory: backend
+        run: ./gradlew checkstyleMain checkstyleTest spotbugsMain spotbugsTest --no-daemon
+      - name: レポートを保存
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-lint-reports
+          path: |
+            backend/build/reports/checkstyle/
+            backend/build/reports/spotbugs/
+          retention-days: 14
+
+  # バックエンドの単体・結合テスト: JUnit・Mockito・Testcontainers（PostgreSQL・S3Mock をコンテナで起動する）
+  backend-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v6
+      - name: テスト
+        working-directory: backend
+        run: ./gradlew test --no-daemon
+      - name: レポートを保存
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-test-reports
+          path: backend/build/reports/tests/
+          retention-days: 14
+
+  # フロントエンドの静的解析: ESLint・TypeScript の型チェック
+  frontend-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: ESLint
+        run: npm run lint
+      - name: 型チェック
+        run: npm run typecheck
+
+  # フロントエンドの単体テスト（Vitest・React Testing Library）と本番ビルド
+  frontend-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Vitest
+        run: npm test
+      - name: ビルド
+        run: npm run build
+
+  # Playwright の E2E テスト（docs/08）。表示時間の判定（perf プロジェクト）は流さない
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+      - name: 依存をインストール
+        run: |
+          npm ci --prefix frontend
+          npm ci --prefix e2e
+      - name: E2E のコードの型チェック
+        working-directory: e2e
+        run: npm run typecheck
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v6
+      # 起動の待ち時間を短くするため、先にコンパイルしておく（起動は Playwright の webServer が行う）
+      - name: バックエンドをビルド
+        working-directory: backend
+        run: ./gradlew classes --no-daemon
+      - name: Chromium をインストール
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+      - name: E2E テスト
+        working-directory: e2e
+        run: npm run test:e2e
+      - name: レポートを保存
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 14
