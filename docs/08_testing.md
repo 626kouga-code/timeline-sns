@@ -40,7 +40,9 @@
 
 [非機能要件](03_non-functional-requirements.md)の「タイムラインの初回表示は 2 秒以内（100 ユーザー同時接続時）」を k6 で確かめる。性能に効きそうな変更（タイムラインの SQL・インデックス・設定など）の前後や、リリース前などに手動で実行する。対象はローカルと GitHub Actions のランナー上の環境だけで、AWS の環境には負荷をかけない。
 
-### シナリオ（`perf/timeline.js`）
+### シナリオ（`perf/timeline.ts`）
+
+シナリオはフロントエンドに合わせて TypeScript で書く。k6 は `.ts` をそのまま実行するのでビルドは要らない。`perf/package.json` の依存（`@types/k6`・`typescript`）は型チェック専用で、`perf/` で `npm install` → `npm run typecheck` で確かめる（CI でも k6 の前に実行する）。
 
 1. `setup()` で API を呼んでテストデータを作る。ユーザー登録、本文だけの投稿、フォローの順。ユーザー名には実行ごとに別の接頭辞（`pf<5 桁>_<連番>`）を付けるので、前回のデータとぶつからない
 2. 各 VU（仮想ユーザー）が次の操作を繰り返す。間に 1〜2 秒の待ちを入れる
@@ -81,15 +83,15 @@ DB_URL=jdbc:postgresql://localhost:5433/timeline_perf LOGGING_LEVEL_COM_TIMELINE
 #   $env:DB_URL="jdbc:postgresql://localhost:5433/timeline_perf"; $env:LOGGING_LEVEL_COM_TIMELINESNS="INFO"; .\gradlew.bat bootRun
 
 # 3. 別のターミナルで、リポジトリ直下から実行する
-docker compose run --rm k6 run /perf/timeline.js                   # smoke
-docker compose run --rm k6 run -e SCENARIO=load /perf/timeline.js  # load
+docker compose run --rm k6 run /perf/timeline.ts                   # smoke
+docker compose run --rm k6 run -e SCENARIO=load /perf/timeline.ts  # load
 
 # 4. 片付け（テストデータは実行ごとに溜まる。バックエンドを止めてから消す）
 docker compose exec postgres dropdb -U timeline timeline_perf
 ```
 
 - Git Bash では `/perf/...` が Windows のパスに書き換えられて失敗する。先頭に `MSYS_NO_PATHCONV=1` を付けるか、PowerShell で実行する
-- k6 をインストール済みなら、リポジトリ直下で `k6 run perf/timeline.js` でもよい（対象は `-e BASE_URL=` で変えられる）。HTML レポートも出すには、環境変数 `K6_WEB_DASHBOARD=true` と `K6_WEB_DASHBOARD_EXPORT=perf/results/report.html` を付ける
+- k6 をインストール済みなら、リポジトリ直下で `k6 run perf/timeline.ts` でもよい（対象は `-e BASE_URL=` で変えられる）。HTML レポートも出すには、環境変数 `K6_WEB_DASHBOARD=true` と `K6_WEB_DASHBOARD_EXPORT=perf/results/report.html` を付ける
 
 ### GitHub Actions で実行する
 

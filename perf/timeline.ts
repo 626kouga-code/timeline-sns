@@ -2,8 +2,8 @@
 // 要件: タイムラインの初回表示は 2 秒以内（100 ユーザー同時接続時）— docs/03
 //
 // 実行例:
-//   docker compose run --rm k6 run /perf/timeline.js                  # smoke（動作確認）
-//   docker compose run --rm k6 run -e SCENARIO=load /perf/timeline.js # load（100 VU）
+//   docker compose run --rm k6 run /perf/timeline.ts                  # smoke（動作確認）
+//   docker compose run --rm k6 run -e SCENARIO=load /perf/timeline.ts # load（100 VU）
 //
 // 環境変数:
 //   BASE_URL        対象の API（既定 http://localhost:8080）
@@ -12,12 +12,27 @@
 //   POSTS_PER_USER  1 人あたりの投稿数（既定 smoke 5 / load 20）
 //   FOLLOWS         1 人あたりのフォロー数（既定 smoke 3 / load 20）
 import { check, sleep } from 'k6';
+import type { Options, Scenario } from 'k6/options';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.1.0/index.js';
-import { createPost, follow, globalTimeline, homeNewCount, homeTimeline, signup } from './lib/api.js';
+import { createPost, follow, globalTimeline, homeNewCount, homeTimeline, signup } from './lib/api.ts';
 
-const SCENARIO = __ENV.SCENARIO || 'smoke';
+interface Preset {
+  users: number;
+  postsPerUser: number;
+  follows: number;
+  executor: Scenario;
+}
 
-const PRESETS = {
+interface PerfUser {
+  handle: string;
+  token: string;
+}
+
+interface SetupData {
+  users: PerfUser[];
+}
+
+const PRESETS: Record<string, Preset> = {
   smoke: {
     users: 10,
     postsPerUser: 5,
@@ -41,6 +56,7 @@ const PRESETS = {
   },
 };
 
+const SCENARIO = __ENV.SCENARIO || 'smoke';
 const preset = PRESETS[SCENARIO];
 if (!preset) {
   throw new Error(`SCENARIO は ${Object.keys(PRESETS).join(' / ')} のどれかにしてください: ${SCENARIO}`);
@@ -50,7 +66,7 @@ const USERS = Number(__ENV.USERS || preset.users);
 const POSTS_PER_USER = Number(__ENV.POSTS_PER_USER || preset.postsPerUser);
 const FOLLOWS = Math.min(Number(__ENV.FOLLOWS || preset.follows), USERS - 1);
 
-export const options = {
+export const options: Options = {
   scenarios: { [SCENARIO]: preset.executor },
   // setup は ユーザー数 ×（登録 + 投稿 + フォロー）回 API を呼ぶので長めにとる
   setupTimeout: '10m',
@@ -67,10 +83,10 @@ export const options = {
 };
 
 /** テストデータを API で作る。実行ごとに別の接頭辞を付け、前回のデータとぶつからないようにする。 */
-export function setup() {
+export function setup(): SetupData {
   // handle は ^[A-Za-z0-9_]{3,15}$。"pf" + 英数字 5 桁 + "_" + 連番（最大 4 桁）で 15 文字以内に収める
   const runId = Date.now().toString(36).slice(-5);
-  const users = [];
+  const users: PerfUser[] = [];
   for (let i = 0; i < USERS; i++) {
     const handle = `pf${runId}_${i}`;
     const token = signup({
@@ -97,23 +113,23 @@ export function setup() {
 }
 
 /** 1 反復 = 1 人がタイムラインを開いて少し読み進め、新着を確かめ、全体タイムラインも見る。 */
-export default function ({ users }) {
+export default function ({ users }: SetupData): void {
   const { token } = users[(__VU - 1) % users.length];
 
   const first = homeTimeline(token);
   const ok = check(first, {
     'home 200': (r) => r.status === 200,
-    'home has items': (r) => r.status === 200 && r.json('items').length > 0,
+    'home has items': (r) => r.status === 200 && (r.json('items') as unknown[]).length > 0,
   });
   sleep(1);
 
   if (ok) {
-    const nextCursor = first.json('nextCursor');
+    const nextCursor = first.json('nextCursor') as string | null;
     if (nextCursor) {
       check(homeTimeline(token, nextCursor, 'home_timeline_next'), { 'home next 200': (r) => r.status === 200 });
       sleep(1);
     }
-    const newest = first.json('items.0.id');
+    const newest = first.json('items.0.id') as string;
     check(homeNewCount(token, newest), { 'new-count 200': (r) => r.status === 200 });
     sleep(1);
   }
@@ -123,7 +139,7 @@ export default function ({ users }) {
 }
 
 /** 標準出力の要約に加えて、結果を perf/results/ に JSON で残す。 */
-export function handleSummary(data) {
+export function handleSummary(data: Record<string, unknown>): Record<string, string> {
   const dir = __ENV.RESULTS_DIR || 'perf/results';
   return {
     stdout: textSummary(data, { indent: ' ', enableColors: true }),

@@ -39,6 +39,16 @@ cd backend
 
 違反やテスト失敗があるとビルド自体が失敗するように設定する（`ignoreFailures = false`）。
 
+## パフォーマンステスト（`perf/` 配下を変更した場合）
+
+```bash
+cd perf
+npm install         # 初回のみ（@types/k6・typescript。型チェック専用）
+npm run typecheck   # tsc --noEmit による型チェック
+```
+
+シナリオの中身を変えたときは、docs/08 の手順で smoke も実行して動くことを確かめる。
+
 ## Terraform
 
 AWS 構成は未定（[docs/11_open-issues.md](../../../docs/11_open-issues.md)）。Terraform を導入したら、

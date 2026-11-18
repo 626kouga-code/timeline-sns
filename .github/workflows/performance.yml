@@ -23,6 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # 負荷をかける前に、シナリオ（TypeScript）の型エラーで止める
+      - name: シナリオの型チェック
+        working-directory: perf
+        run: |
+          npm ci
+          npm run typecheck
+
       - name: PostgreSQL と S3Mock を起動
         run: docker compose up -d --wait postgres s3mock
 
@@ -63,7 +70,7 @@ jobs:
           K6_WEB_DASHBOARD_EXPORT: perf/results/report-${{ inputs.scenario }}.html
         run: |
           mkdir -p perf/results
-          k6 run -e SCENARIO=${{ inputs.scenario }} perf/timeline.js
+          k6 run -e SCENARIO=${{ inputs.scenario }} perf/timeline.ts
 
       - name: 結果とログを保存
         if: always()
