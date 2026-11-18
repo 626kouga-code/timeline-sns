@@ -11,6 +11,7 @@
 //   USERS           setup で作るユーザー数（既定 smoke 10 / load 100）
 //   POSTS_PER_USER  1 人あたりの投稿数（既定 smoke 5 / load 20）
 //   FOLLOWS         1 人あたりのフォロー数（既定 smoke 3 / load 20）
+//   HOLD            load で 100 VU を保つ時間（既定 3m）。E2E の負荷中モード（e2e/support/global-setup.ts）が延ばす
 import { check, sleep } from 'k6';
 import type { Options, Scenario } from 'k6/options';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.1.0/index.js';
@@ -48,7 +49,7 @@ const PRESETS: Record<string, Preset> = {
       startVUs: 0,
       stages: [
         { duration: '1m', target: 100 },
-        { duration: '3m', target: 100 },
+        { duration: __ENV.HOLD || '3m', target: 100 },
         { duration: '30s', target: 0 },
       ],
       gracefulRampDown: '10s',

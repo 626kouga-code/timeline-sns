@@ -21,6 +21,7 @@ description: |
   - [frontend/vite.config.ts](../../../frontend/vite.config.ts) で `server.port: 5173` /
     `server.strictPort: true` を設定する。ポートが埋まっている場合、Viteは
     別ポートへ自動移動せず起動失敗する(意図した挙動)。
+  - 本番ビルドの確認用サーバー（`npm run preview`。E2E テストが使う）も同じ設定（`preview`）で 5173 に固定している。
 - バックエンド(Spring Boot): `8080`
   - [backend/src/main/resources/application.yml](../../../backend/src/main/resources/application.yml)
     の `server.port: 8080` で固定する。同様に自動フォールバックしない。

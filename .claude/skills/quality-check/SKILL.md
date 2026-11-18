@@ -49,6 +49,18 @@ npm run typecheck   # tsc --noEmit による型チェック
 
 シナリオの中身を変えたときは、docs/08 の手順で smoke も実行して動くことを確かめる。
 
+## E2E テスト（`e2e/` 配下を変更した場合）
+
+```bash
+cd e2e
+npm install                          # 初回のみ
+npx playwright install chromium      # 初回のみ（ブラウザのダウンロード）
+npm run typecheck                    # tsc --noEmit による型チェック
+```
+
+シナリオを変えたときは、8080・5173 を空けてから `npm test` を実行して通ることを確かめる（docs/08）。
+`frontend/` の画面の文言・構造を変えたときも、E2E が壊れていないか `npm test` で確かめる。
+
 ## Terraform
 
 AWS 構成は未定（[docs/11_open-issues.md](../../../docs/11_open-issues.md)）。Terraform を導入したら、

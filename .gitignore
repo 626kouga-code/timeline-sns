@@ -25,3 +25,8 @@ Thumbs.db
 
 # パフォーマンステストの結果（docs/08）
 perf/results/
+
+# E2E テストの結果（docs/08）
+e2e/playwright-report/
+e2e/test-results/
+e2e/perf-results/

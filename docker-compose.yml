@@ -26,7 +26,8 @@ services:
   s3mock:
     image: adobe/s3mock:5.2
     environment:
-      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: timeline-media
+      # timeline-e2e は E2E テスト用（開発用の画像と混ざらないように分ける。docs/08）
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: timeline-media,timeline-e2e
       # 名前付きボリュームに保存し、コンテナを作り直しても画像を残す。
       # イメージが非 root ユーザーで動くため、保存先は書き込み権限のある /s3mockroot にする
       COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /s3mockroot
