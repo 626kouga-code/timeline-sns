@@ -48,6 +48,20 @@ services:
       timeout: 5s
       retries: 10
 
+  # パフォーマンステスト（k6）。profile "perf" を付けたサービスなので、普段の `docker compose up -d` では起動しない。
+  # ホストで動かしているバックエンド（8080）に負荷をかける。手順は docs/08 の「パフォーマンステスト」
+  #   docker compose run --rm k6 run /perf/timeline.js
+  k6:
+    image: grafana/k6:2.3.0
+    profiles: ["perf"]
+    environment:
+      BASE_URL: ${BASE_URL:-http://host.docker.internal:8080}
+      RESULTS_DIR: /perf/results
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./perf:/perf
+
 volumes:
   postgres-data:
   s3mock-data:

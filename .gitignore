@@ -22,3 +22,6 @@ Thumbs.db
 
 # Claude Code の個人設定
 .claude/settings.local.json
+
+# パフォーマンステストの結果（docs/08）
+perf/results/
