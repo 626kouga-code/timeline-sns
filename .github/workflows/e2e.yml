@@ -1,0 +1,69 @@
+# E2E テスト（Playwright）とブラウザ性能の計測。任意のタイミングで手動実行する
+# （Actions タブの「Run workflow」、または `gh workflow run e2e.yml -f mode=normal`）。PR やプッシュでは動かない。
+# ランナー上で PostgreSQL・S3Mock を起動し、バックエンドとフロントの本番ビルドは Playwright が起動する。AWS には触らない。
+# 手順と結果の見方は docs/08 の「E2E テスト」
+name: e2e
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "normal（全シナリオ + 性能の判定）/ load（k6 の 100 VU を流しながら性能だけ）"
+        type: choice
+        options: [normal, load]
+        default: normal
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: 依存をインストール
+        run: |
+          npm ci --prefix frontend
+          npm ci --prefix e2e
+
+      # 時間のかかる準備の前に、シナリオの型エラーで止める
+      - name: シナリオの型チェック
+        working-directory: e2e
+        run: npm run typecheck
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # 起動の待ち時間を短くするため、先にコンパイルしておく（起動は Playwright の webServer が行う）
+      - name: バックエンドをビルド
+        working-directory: backend
+        run: ./gradlew classes --no-daemon
+
+      - name: Chromium をインストール
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E テストを実行（${{ inputs.mode }}）
+        working-directory: e2e
+        run: npm run ${{ inputs.mode == 'load' && 'test:load' || 'test' }}
+
+      - name: レポートと結果を保存
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-${{ inputs.mode }}-${{ github.run_number }}
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+            e2e/perf-results/
+          retention-days: 14

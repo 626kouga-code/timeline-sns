@@ -21,6 +21,8 @@
 | | React Router | 8.x | |
 | 開発ツール | Node.js | 24（LTS） | |
 | | Docker / Docker Compose | 最新版 | |
+| テスト | Playwright | 1.64.x | E2E テストとブラウザ性能の計測（Chromium）。アクセシビリティ検査に @axe-core/playwright（[テスト方針](08_testing.md#e2e-テスト)） |
+| | k6 | 2.3.x | API の負荷テスト（[テスト方針](08_testing.md#パフォーマンステスト)） |
 | インフラ | AWS | — | 構成は未決（[未決事項](11_open-issues.md)） |
 | 外部サービス | Google OAuth 2.0 | — | Google ログイン（Could。MVP では使わない） |
 
@@ -32,6 +34,8 @@
 SNSアプリ/
 ├── frontend/            # React + Vite
 ├── backend/             # Spring Boot
+├── e2e/                 # Playwright の E2E テスト
+├── perf/                # k6 の負荷テスト
 ├── docs/                # 要件定義書などの設計資料
 ├── docker-compose.yml   # ローカル用の PostgreSQL・S3Mock・Mailpit
 └── .github/workflows/   # CI/CD
