@@ -57,6 +57,10 @@ jobs:
           k6-version: "2.3.0"
 
       - name: k6 を実行（${{ inputs.scenario }}）
+        env:
+          # グラフ付きの HTML レポートを書き出す（k6 の標準機能）
+          K6_WEB_DASHBOARD: "true"
+          K6_WEB_DASHBOARD_EXPORT: perf/results/report-${{ inputs.scenario }}.html
         run: |
           mkdir -p perf/results
           k6 run -e SCENARIO=${{ inputs.scenario }} perf/timeline.js

@@ -89,7 +89,7 @@ docker compose exec postgres dropdb -U timeline timeline_perf
 ```
 
 - Git Bash では `/perf/...` が Windows のパスに書き換えられて失敗する。先頭に `MSYS_NO_PATHCONV=1` を付けるか、PowerShell で実行する
-- k6 をインストール済みなら、リポジトリ直下で `k6 run perf/timeline.js` でもよい（対象は `-e BASE_URL=` で変えられる）
+- k6 をインストール済みなら、リポジトリ直下で `k6 run perf/timeline.js` でもよい（対象は `-e BASE_URL=` で変えられる）。HTML レポートも出すには、環境変数 `K6_WEB_DASHBOARD=true` と `K6_WEB_DASHBOARD_EXPORT=perf/results/report.html` を付ける
 
 ### GitHub Actions で実行する
 
@@ -99,11 +99,12 @@ docker compose exec postgres dropdb -U timeline timeline_perf
 gh workflow run performance.yml -f scenario=load
 ```
 
-ランナー上で PostgreSQL・S3Mock を docker compose で起動し、バックエンドを本番と同じ設定（プロファイルなし）で起動してから k6 を流す。結果の JSON とバックエンドのログは artifact（`performance-<シナリオ>-<実行番号>`、14 日保存）に残る。GitHub のランナーは性能が実行ごとに揺れるので、数値は傾向を見る参考値として扱う。
+ランナー上で PostgreSQL・S3Mock を docker compose で起動し、バックエンドを本番と同じ設定（プロファイルなし）で起動してから k6 を流す。HTML レポート（`report-<シナリオ>.html`）・結果の JSON・バックエンドのログは artifact（`performance-<シナリオ>-<実行番号>`、14 日保存）に残る。GitHub のランナーは性能が実行ごとに揺れるので、数値は傾向を見る参考値として扱う。
 
 ### 結果の見方
 
 - 標準出力の要約で、`{ name:home_timeline }` の `p(95)` と、`http_req_failed`・`checks` に ✓ が付いているかを見る
+- 時間ごとの推移は HTML レポートで見る。ローカルは `perf/results/report.html`（実行のたびに上書き）をブラウザで開く。応答時間・リクエスト数・VU 数の推移のグラフと、エンドポイントごとの集計がある
 - 詳しい値は `perf/results/summary-<シナリオ>.json`（git の管理外）に残る
 - 遅いリクエストを調べるときは、バックエンドのアクセスログ（`RequestLoggingFilter` が出す `durationMs`）を見る
 

@@ -57,6 +57,9 @@ services:
     environment:
       BASE_URL: ${BASE_URL:-http://host.docker.internal:8080}
       RESULTS_DIR: /perf/results
+      # グラフ付きの HTML レポートを書き出す（k6 の標準機能。実行のたびに上書きする）
+      K6_WEB_DASHBOARD: "true"
+      K6_WEB_DASHBOARD_EXPORT: /perf/results/report.html
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
