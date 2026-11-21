@@ -53,7 +53,7 @@ services:
   # ホストで動かしているバックエンド（8080）に負荷をかける。手順は docs/08 の「パフォーマンステスト」
   #   docker compose run --rm k6 run /perf/timeline.ts
   k6:
-    image: grafana/k6:2.3.0
+    image: grafana/k6:2.4.0
     profiles: ["perf"]
     environment:
       BASE_URL: ${BASE_URL:-http://host.docker.internal:8080}
