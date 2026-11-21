@@ -107,7 +107,9 @@ describe('AvatarCropper', () => {
 
   it('スライダーで拡大率を変えられる', async () => {
     setup()
-    const slider = await screen.findByRole('slider', { name: '拡大' })
+    // スライダーは画像の読み込み前から出ているので、切り抜き部品が出る（読み込みが終わる）のを待ってから動かす
+    await screen.findByTestId('cropper')
+    const slider = screen.getByRole('slider', { name: '拡大' })
 
     // range 入力は userEvent で動かせないので、値を直接変える
     fireEvent.change(slider, { target: { value: '2.5' } })
