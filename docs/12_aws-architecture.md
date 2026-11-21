@@ -10,30 +10,30 @@
 ## 構成図
 
 ```mermaid
-flowchart LR
+flowchart TB
     user["ブラウザ"] -- HTTPS --> cf["CloudFront<br/>（入口・HTTPS）"]
 
     subgraph aws["AWS（ap-northeast-1）"]
         cf -- "/*" --> s3web[("S3<br/>フロントのビルド")]
         cf -- "/media/*" --> s3media[("S3<br/>投稿画像・アイコン")]
-        cf -- "/api/*<br/>（VPC オリジン）" --> alb
+        cf -- "/api/*（VPC オリジン）" --> alb
 
         subgraph vpc["VPC"]
-            subgraph private["プライベートサブネット"]
-                alb["ALB（内部）"]
-                rds[("RDS<br/>PostgreSQL 18")]
-            end
-            subgraph public["パブリックサブネット"]
-                task["ECS Fargate<br/>Spring Boot"]
-            end
+            alb["ALB（内部）<br/>プライベートサブネット"] --> task["ECS Fargate<br/>Spring Boot<br/>パブリックサブネット"]
+            task --> rds[("RDS PostgreSQL 18<br/>プライベートサブネット")]
         end
 
-        alb --> task
-        task --> rds
         task -- 画像の保存 --> s3media
-        task -- ログ --> logs["CloudWatch Logs<br/>アラーム → SNS メール"]
-        ecr["ECR<br/>コンテナイメージ"] -. 起動時に取得 .-> task
-        ssm["SSM Parameter Store<br/>秘密情報"] -. 起動時に渡す .-> task
+
+        subgraph ops["運用・管理"]
+            ecr["ECR<br/>コンテナイメージ"]
+            ssm["SSM Parameter Store<br/>秘密情報"]
+            logs["CloudWatch Logs<br/>アラーム → SNS メール"]
+        end
+
+        ecr -. 起動時に取得 .-> task
+        ssm -. 起動時に渡す .-> task
+        task -- ログ --> logs
     end
 ```
 
