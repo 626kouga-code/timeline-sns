@@ -35,7 +35,7 @@ describe('画像投稿', () => {
     expect(within(dialog).getAllByRole('img', { name: /添付する画像/ })).toHaveLength(2)
     await userEvent.click(within(dialog).getByRole('button', { name: '投稿する' }))
 
-    expect(await screen.findByText('投稿しました')).toBeInTheDocument()
+    await screen.findByText('投稿しました')
     const [, init] = fetchMock.mock.calls.find(([path]) => path === '/api/posts') ?? []
     const form = init?.body as FormData
     expect(form.get('body')).toBe('')
@@ -123,6 +123,6 @@ describe('投稿の画像の表示', () => {
     mockApi({ '/api/posts/p1': () => json(200, withImages(1)) })
     renderApp('/posts/p1')
 
-    expect(await screen.findByRole('button', { name: '画像 1 を拡大' })).toBeInTheDocument()
+    await screen.findByRole('button', { name: '画像 1 を拡大' })
   })
 })

@@ -27,10 +27,10 @@ describe('ユーザー検索', () => {
     })
     renderApp('/search')
 
-    expect(await screen.findByText('ユーザーID（@handle）や表示名の一部を入力してください')).toBeInTheDocument()
+    await screen.findByText('ユーザーID（@handle）や表示名の一部を入力してください')
     await userEvent.type(screen.getByRole('searchbox', { name: 'ユーザーID・表示名で検索' }), 'hana')
 
-    expect(await screen.findByText('HANAKO')).toBeInTheDocument()
+    await screen.findByText('HANAKO')
     expect(screen.getByText('HANABI')).toBeInTheDocument()
     // 1 文字ごとではなく、入力が止まってから 1 回だけ問い合わせる
     expect(searchCalls(fetchMock)).toEqual(['/api/search/users?q=hana'])
@@ -40,7 +40,7 @@ describe('ユーザー検索', () => {
     mockApi({ '/api/search/users': () => page([summary('u2', 'hanako')]) })
     renderApp('/search?q=hanako')
 
-    expect(await screen.findByText('HANAKO')).toBeInTheDocument()
+    await screen.findByText('HANAKO')
     expect(screen.getByRole('searchbox')).toHaveValue('hanako')
   })
 
@@ -48,7 +48,7 @@ describe('ユーザー検索', () => {
     mockApi({ '/api/search/users': () => page([]) })
     renderApp('/search?q=zzz')
 
-    expect(await screen.findByText('「zzz」に一致するユーザーはいません')).toBeInTheDocument()
+    await screen.findByText('「zzz」に一致するユーザーはいません')
   })
 
   it('次のページを読み込める', async () => {
@@ -61,7 +61,7 @@ describe('ユーザー検索', () => {
     await screen.findByText('USER1')
     await userEvent.click(screen.getByRole('button', { name: 'さらに読み込む' }))
 
-    expect(await screen.findByText('USER2')).toBeInTheDocument()
+    await screen.findByText('USER2')
     expect(screen.queryByRole('button', { name: 'さらに読み込む' })).not.toBeInTheDocument()
   })
 
@@ -79,7 +79,7 @@ describe('ユーザー検索', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: '@hanako をフォロー' }))
 
-    expect(await screen.findByRole('button', { name: '@hanako のフォローを解除' })).toBeInTheDocument()
+    await screen.findByRole('button', { name: '@hanako のフォローを解除' })
     expect(fetchMock).toHaveBeenCalledWith('/api/users/hanako/follow', expect.objectContaining({ method: 'PUT' }))
   })
 })

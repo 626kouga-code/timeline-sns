@@ -43,7 +43,7 @@ describe('LikeButton', () => {
 
     // 他の人のいいねも反映された数になる
     response.resolve(json(200, { liked: true, likeCount: 5 }))
-    expect(await screen.findByRole('button', { name: 'いいねを取り消す（5 件）' })).toBeInTheDocument()
+    await screen.findByRole('button', { name: 'いいねを取り消す（5 件）' })
   })
 
   it('いいね済みなら取り消しを送る', async () => {
@@ -53,7 +53,7 @@ describe('LikeButton', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'いいねを取り消す（1 件）' }))
 
     expect(request(fetchMock).method).toBe('DELETE')
-    expect(await screen.findByRole('button', { name: 'いいね（0 件）' })).toBeInTheDocument()
+    await screen.findByRole('button', { name: 'いいね（0 件）' })
   })
 
   it('失敗したら元の表示に戻し、理由をトーストで出す', async () => {

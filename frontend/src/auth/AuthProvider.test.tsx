@@ -49,14 +49,14 @@ describe('AuthProvider', () => {
     expect(screen.queryByText('ゲスト')).not.toBeInTheDocument()
 
     refresh.resolve(session())
-    expect(await screen.findByText('@taro')).toBeInTheDocument()
+    await screen.findByText('@taro')
   })
 
   it('復元できなければゲストとして始める', async () => {
     mockApi({ '/api/auth/refresh': noSession })
     setup()
 
-    expect(await screen.findByText('ゲスト')).toBeInTheDocument()
+    await screen.findByText('ゲスト')
   })
 
   it('ログインするとユーザーが入る', async () => {
@@ -65,7 +65,7 @@ describe('AuthProvider', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'ログイン' }))
 
-    expect(await screen.findByText('@taro')).toBeInTheDocument()
+    await screen.findByText('@taro')
   })
 
   it('ログアウトするとユーザーを消し、前のユーザーのキャッシュも消す', async () => {
@@ -76,7 +76,7 @@ describe('AuthProvider', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
 
-    expect(await screen.findByText('ゲスト')).toBeInTheDocument()
+    await screen.findByText('ゲスト')
     expect(queryClient.getQueryData(['notifications', user.id, 'list'])).toBeUndefined()
   })
 
@@ -87,7 +87,7 @@ describe('AuthProvider', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
 
-    expect(await screen.findByText('ゲスト')).toBeInTheDocument()
+    await screen.findByText('ゲスト')
   })
 
   it('setMe で本人の情報を差し替えられる', async () => {

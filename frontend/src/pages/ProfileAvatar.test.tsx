@@ -32,7 +32,7 @@ describe('アイコン画像', () => {
     await userEvent.upload(await screen.findByTestId('avatar-input'), png())
     await userEvent.click(await screen.findByRole('button', { name: '適用' }))
 
-    expect(await screen.findByText('アイコン画像を変更しました')).toBeInTheDocument()
+    await screen.findByText('アイコン画像を変更しました')
     expect(screen.queryByRole('dialog', { name: 'アイコン画像を切り抜く' })).not.toBeInTheDocument()
     expect(document.querySelectorAll('img[src="/api/media/avatars/u1/new.png"]').length).toBeGreaterThan(0)
 
@@ -49,10 +49,10 @@ describe('アイコン画像', () => {
     const event = userEvent.setup({ applyAccept: false })
 
     await event.upload(input, new File(['x'], 'memo.txt', { type: 'text/plain' }))
-    expect(await screen.findByText('JPEG・PNG・WebP・GIF の画像を選んでください')).toBeInTheDocument()
+    await screen.findByText('JPEG・PNG・WebP・GIF の画像を選んでください')
 
     await event.upload(input, png(5 * 1024 * 1024 + 1))
-    expect(await screen.findByText('画像は 5MB 以内にしてください')).toBeInTheDocument()
+    await screen.findByText('画像は 5MB 以内にしてください')
     expect(screen.queryByRole('dialog', { name: 'アイコン画像を切り抜く' })).not.toBeInTheDocument()
   })
 
@@ -76,7 +76,7 @@ describe('アイコン画像', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: '画像を削除' }))
 
-    expect(await screen.findByText('アイコン画像を削除しました')).toBeInTheDocument()
+    await screen.findByText('アイコン画像を削除しました')
     expect(document.querySelector('img[src="/api/media/avatars/u1/old.jpg"]')).toBeNull()
     expect(screen.queryByRole('button', { name: '画像を削除' })).not.toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith('/api/me/avatar', expect.objectContaining({ method: 'DELETE' }))
