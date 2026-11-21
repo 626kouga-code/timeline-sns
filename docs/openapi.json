@@ -289,7 +289,7 @@
           "name" : "cursor",
           "required" : false,
           "schema" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
           }
         }, {
@@ -586,7 +586,7 @@
           "name" : "cursor",
           "required" : false,
           "schema" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
           }
         }, {
@@ -629,7 +629,7 @@
           "name" : "cursor",
           "required" : false,
           "schema" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
           }
         }, {
@@ -704,7 +704,7 @@
           "name" : "cursor",
           "required" : false,
           "schema" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
           }
         }, {
@@ -865,7 +865,7 @@
           "name" : "cursor",
           "required" : false,
           "schema" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
           }
         }, {
@@ -915,7 +915,7 @@
           "name" : "cursor",
           "required" : false,
           "schema" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
           }
         }, {
@@ -965,7 +965,7 @@
           "name" : "cursor",
           "required" : false,
           "schema" : {
-            "type" : "string",
+            "type" : [ "string", "null" ],
             "format" : "uuid"
           }
         }, {
