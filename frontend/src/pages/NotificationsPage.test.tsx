@@ -85,7 +85,7 @@ describe('通知一覧', () => {
     mockApi({ '/api/auth/refresh': session, '/api/notifications': () => page([]) })
     renderApp('/notifications')
 
-    expect(await screen.findByText('まだ通知はありません')).toBeInTheDocument()
+    await screen.findByText('まだ通知はありません')
   })
 
   it('投稿への反応は投稿へ、フォローは相手のプロフィールへ移る', async () => {
@@ -99,7 +99,7 @@ describe('通知一覧', () => {
 
     const items = await screen.findAllByRole('listitem')
     await userEvent.click(within(items[1]).getByText(/いいねしました/))
-    expect(await screen.findByRole('heading', { name: '投稿' })).toBeInTheDocument()
+    await screen.findByRole('heading', { name: '投稿' })
   })
 })
 

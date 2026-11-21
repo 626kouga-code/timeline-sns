@@ -33,7 +33,7 @@ describe('CommentThread', () => {
 
     expect(screen.getByText('コメントを読み込み中…')).toBeInTheDocument()
     response.resolve(json(200, []))
-    expect(await screen.findByText('まだコメントはありません')).toBeInTheDocument()
+    await screen.findByText('まだコメントはありません')
   })
 
   it('取得に失敗したら理由を出す', async () => {
@@ -57,7 +57,7 @@ describe('CommentThread', () => {
     })
     renderWithProviders(<CommentThread postId="p1" />)
 
-    expect(await screen.findByText('a の本文')).toBeInTheDocument()
+    await screen.findByText('a の本文')
     expect(screen.getByText('b の本文')).toBeInTheDocument()
     // 2 階層目（a への返信）には返信先を付けない
     const a1 = screen.getByText('a1 の本文').parentElement!
@@ -74,7 +74,7 @@ describe('CommentThread', () => {
     })
     renderWithProviders(<CommentThread postId="p1" />)
 
-    expect(await screen.findByText('このコメントは削除されました')).toBeInTheDocument()
+    await screen.findByText('このコメントは削除されました')
     expect(screen.getByText('a1x の本文').parentElement).toHaveTextContent('削除されたコメントへの返信')
   })
 

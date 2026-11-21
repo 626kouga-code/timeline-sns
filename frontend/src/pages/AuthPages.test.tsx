@@ -14,7 +14,7 @@ describe('ログイン画面', () => {
     await userEvent.type(screen.getByLabelText('パスワード'), 'password123')
     await userEvent.click(screen.getByRole('button', { name: 'ログイン' }))
 
-    expect(await screen.findByRole('heading', { name: '通知' })).toBeInTheDocument()
+    await screen.findByRole('heading', { name: '通知' })
     expect(screen.getAllByRole('button', { name: 'ログアウト' }).length).toBeGreaterThan(0)
     const [, init] = fetchMock.mock.calls.find(([path]) => path === '/api/auth/login') as unknown as [string, RequestInit]
     expect(JSON.parse(init.body as string)).toEqual({ email: 'taro@example.com', password: 'password123' })
@@ -44,7 +44,7 @@ describe('ログイン画面', () => {
     await screen.findByRole('heading', { name: 'ホーム' })
     await userEvent.click(screen.getAllByRole('button', { name: 'ログアウト' })[0])
 
-    expect(await screen.findByRole('heading', { name: '全体タイムライン' })).toBeInTheDocument()
+    await screen.findByRole('heading', { name: '全体タイムライン' })
     expect(screen.queryByRole('button', { name: 'ログアウト' })).not.toBeInTheDocument()
   })
 
@@ -52,7 +52,7 @@ describe('ログイン画面', () => {
     mockApi({})
     renderApp('/home')
 
-    expect(await screen.findByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+    await screen.findByRole('heading', { name: 'ログイン' })
   })
 })
 
@@ -87,7 +87,7 @@ describe('新規登録画面', () => {
     await userEvent.click(screen.getByRole('checkbox'))
     await userEvent.click(screen.getByRole('button', { name: '登録する' }))
 
-    expect(await screen.findByText('このユーザーIDは既に使われています')).toBeInTheDocument()
+    await screen.findByText('このユーザーIDは既に使われています')
     expect(screen.getByLabelText('ユーザーID')).toHaveAttribute('aria-invalid', 'true')
   })
 
@@ -104,6 +104,6 @@ describe('新規登録画面', () => {
     await userEvent.click(screen.getByRole('checkbox'))
     await userEvent.click(screen.getByRole('button', { name: '登録する' }))
 
-    expect(await screen.findByRole('heading', { name: 'ホーム' })).toBeInTheDocument()
+    await screen.findByRole('heading', { name: 'ホーム' })
   })
 })

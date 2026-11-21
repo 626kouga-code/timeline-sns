@@ -32,7 +32,7 @@ describe('全体タイムライン', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'さらに読み込む' }))
 
-    expect(await screen.findByText('古い投稿')).toBeInTheDocument()
+    await screen.findByText('古い投稿')
     expect(screen.getByText('これ以上の投稿はありません')).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith('/api/timeline/global?cursor=p2', expect.anything())
   })
@@ -41,7 +41,7 @@ describe('全体タイムライン', () => {
     mockApi({})
     renderApp('/')
 
-    expect(await screen.findByText('まだ投稿がありません')).toBeInTheDocument()
+    await screen.findByText('まだ投稿がありません')
   })
 
   it('取得に失敗したらメッセージを表示する', async () => {
@@ -75,7 +75,7 @@ describe('新着表示（F-22）', () => {
     const banner = await screen.findByRole('button', { name: '新しい投稿があります（2 件）' })
     await userEvent.setup({ advanceTimers: vi.advanceTimersByTime }).click(banner)
 
-    expect(await screen.findByText('新しい投稿')).toBeInTheDocument()
+    await screen.findByText('新しい投稿')
     expect(screen.queryByRole('button', { name: /新しい投稿があります/ })).not.toBeInTheDocument()
   })
 })
@@ -102,9 +102,9 @@ describe('ホームタイムラインと投稿', () => {
     expect(within(dialog).getByLabelText('残り文字数')).toHaveTextContent('275')
     await userEvent.click(submit)
 
-    expect(await screen.findByText('投稿しました')).toBeInTheDocument()
+    await screen.findByText('投稿しました')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(await screen.findByText('こんにちは')).toBeInTheDocument()
+    await screen.findByText('こんにちは')
     const [, init] = fetchMock.mock.calls.find(([path]) => path === '/api/posts') as unknown as [string, RequestInit]
     expect(init.method).toBe('POST')
     expect((init.body as FormData).get('body')).toBe('こんにちは')
@@ -160,7 +160,7 @@ describe('ホームタイムラインと投稿', () => {
     await userEvent.click(within(mine).getByRole('button', { name: '投稿のメニュー' }))
     await userEvent.click(within(mine).getByRole('button', { name: '削除' }))
 
-    expect(await screen.findByText('投稿を削除しました')).toBeInTheDocument()
+    await screen.findByText('投稿を削除しました')
     expect(await screen.findAllByRole('article')).toHaveLength(1)
     expect(screen.queryByText('自分の投稿')).not.toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith('/api/posts/p2', expect.objectContaining({ method: 'DELETE' }))

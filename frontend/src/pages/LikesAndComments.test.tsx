@@ -38,7 +38,7 @@ describe('いいね', () => {
 
     // 他の人のいいねも含んだサーバーの数で確定
     response.resolve(json(200, { liked: true, likeCount: 5 }))
-    expect(await screen.findByRole('button', { name: 'いいねを取り消す（5 件）' })).toBeInTheDocument()
+    await screen.findByRole('button', { name: 'いいねを取り消す（5 件）' })
   })
 
   it('失敗したら元に戻してメッセージを出す', async () => {
@@ -52,7 +52,7 @@ describe('いいね', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'いいね（0 件）' }))
 
-    expect(await screen.findByText('この投稿は存在しないか、表示できません')).toBeInTheDocument()
+    await screen.findByText('この投稿は存在しないか、表示できません')
     expect(screen.getByRole('button', { name: 'いいね（0 件）' })).toHaveAttribute('aria-pressed', 'false')
   })
 
@@ -62,7 +62,7 @@ describe('いいね', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'いいね（0 件）' }))
 
-    expect(await screen.findByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+    await screen.findByRole('heading', { name: 'ログイン' })
     expect(fetchMock.mock.calls.some(([path]) => String(path).includes('/likes'))).toBe(false)
   })
 })
@@ -82,7 +82,7 @@ describe('コメント', () => {
     })
     renderApp('/posts/p1')
 
-    expect(await screen.findByText('本文 c3')).toBeInTheDocument()
+    await screen.findByText('本文 c3')
     // c2 はルート直下なので返信先を出さない。c3 は c2（jiro）への返信
     expect(screen.getAllByText(/への返信/)).toHaveLength(1)
     expect(screen.getByRole('link', { name: '@jiro' })).toBeInTheDocument()
@@ -136,13 +136,13 @@ describe('コメント', () => {
 
     await userEvent.type(await screen.findByLabelText('コメントの本文'), '  はじめまして  ')
     await userEvent.click(screen.getByRole('button', { name: 'コメント' }))
-    expect(await screen.findByText('コメントしました')).toBeInTheDocument()
+    await screen.findByText('コメントしました')
 
     await userEvent.click(within(screen.getByText('本文 c1').parentElement!).getByRole('button', { name: '返信' }))
     const replyBox = screen.getByLabelText('返信の本文')
     await userEvent.type(replyBox, 'よろしく')
     await userEvent.click(within(replyBox.closest('form')!).getByRole('button', { name: '返信' }))
-    expect(await screen.findByText('返信しました')).toBeInTheDocument()
+    await screen.findByText('返信しました')
 
     const posted = fetchMock.mock.calls
       .filter(([path, init]) => path === '/api/posts/p1/comments' && init?.method === 'POST')

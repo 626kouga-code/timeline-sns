@@ -10,7 +10,7 @@ describe('投稿詳細', () => {
     })
     renderApp('/posts/p1')
 
-    expect(await screen.findByText('詳細の本文')).toBeInTheDocument()
+    await screen.findByText('詳細の本文')
     expect(screen.getByText('いいね').parentElement).toHaveTextContent('3 いいね')
     expect(screen.getByText('コメント').parentElement).toHaveTextContent('2 コメント')
     // ゲストには削除メニューを出さない
@@ -49,7 +49,7 @@ describe('投稿詳細', () => {
     await userEvent.click(await screen.findByRole('button', { name: '投稿のメニュー' }))
     await userEvent.click(screen.getByRole('button', { name: '削除' }))
 
-    expect(await screen.findByRole('heading', { name: 'ホーム' })).toBeInTheDocument()
+    await screen.findByRole('heading', { name: 'ホーム' })
     expect(screen.getByText('投稿を削除しました')).toBeInTheDocument()
   })
 })

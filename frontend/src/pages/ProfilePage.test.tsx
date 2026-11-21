@@ -45,11 +45,11 @@ describe('プロフィール', () => {
     })
     renderApp('/users/hanako')
 
-    expect(await screen.findByRole('heading', { name: '花子', level: 2 })).toBeInTheDocument()
+    await screen.findByRole('heading', { name: '花子', level: 2 })
     expect(screen.getByText('花が好きです')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '3 フォロー' })).toHaveAttribute('href', '/users/hanako/following')
     expect(screen.getByRole('link', { name: '5 フォロワー' })).toHaveAttribute('href', '/users/hanako/followers')
-    expect(await screen.findByText('花子の投稿')).toBeInTheDocument()
+    await screen.findByText('花子の投稿')
     // ゲストには「フォローされています」を出さない
     expect(screen.queryByText('フォローされています')).not.toBeInTheDocument()
   })
@@ -58,7 +58,7 @@ describe('プロフィール', () => {
     mockApi({ '/api/users/nobody': notFound })
     renderApp('/users/nobody')
 
-    expect(await screen.findByText('@nobody は存在しないか、表示できません。')).toBeInTheDocument()
+    await screen.findByText('@nobody は存在しないか、表示できません。')
   })
 
   it('自分のプロフィールには編集ボタンを出し、フォローボタンは出さない', async () => {
@@ -71,7 +71,7 @@ describe('プロフィール', () => {
 
     expect(await screen.findByRole('link', { name: 'プロフィールを編集' })).toHaveAttribute('href', '/settings/profile')
     expect(screen.queryByRole('button', { name: /フォロー/ })).not.toBeInTheDocument()
-    expect(await screen.findByText('まだ投稿がありません')).toBeInTheDocument()
+    await screen.findByText('まだ投稿がありません')
   })
 
   it('ブロック関係にあるときは投稿を問い合わせず、フォローボタンも出さない', async () => {
@@ -81,7 +81,7 @@ describe('プロフィール', () => {
     })
     renderApp('/users/hanako')
 
-    expect(await screen.findByText('投稿を表示できません')).toBeInTheDocument()
+    await screen.findByText('投稿を表示できません')
     expect(screen.queryByRole('button', { name: /フォロー/ })).not.toBeInTheDocument()
     expect(fetchMock.mock.calls.some(([path]) => String(path).includes('/posts'))).toBe(false)
   })
@@ -103,12 +103,12 @@ describe('フォロー', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: '@hanako をフォロー' }))
 
-    expect(await screen.findByRole('button', { name: '@hanako のフォローを解除' })).toBeInTheDocument()
+    await screen.findByRole('button', { name: '@hanako のフォローを解除' })
     expect(screen.getByRole('link', { name: '6 フォロワー' })).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith('/api/users/hanako/follow', expect.objectContaining({ method: 'PUT' }))
 
     await userEvent.click(screen.getByRole('button', { name: '@hanako のフォローを解除' }))
-    expect(await screen.findByRole('button', { name: '@hanako をフォロー' })).toBeInTheDocument()
+    await screen.findByRole('button', { name: '@hanako をフォロー' })
   })
 
   it('失敗したらメッセージを出す', async () => {
@@ -122,7 +122,7 @@ describe('フォロー', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: '@hanako をフォロー' }))
 
-    expect(await screen.findByText('このユーザーはフォローできません')).toBeInTheDocument()
+    await screen.findByText('このユーザーはフォローできません')
   })
 
   it('未ログインで押すとログイン画面へ移る', async () => {
@@ -134,7 +134,7 @@ describe('フォロー', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: '@hanako をフォロー' }))
 
-    expect(await screen.findByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+    await screen.findByRole('heading', { name: 'ログイン' })
     expect(fetchMock.mock.calls.some(([path]) => String(path).endsWith('/follow'))).toBe(false)
   })
 })
@@ -150,21 +150,21 @@ describe('フォロー・フォロワー一覧', () => {
     })
     renderApp('/users/hanako/following')
 
-    expect(await screen.findByText('JIRO')).toBeInTheDocument()
+    await screen.findByText('JIRO')
     expect(screen.getByText('フォローされています')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '@jiro をフォロー' })).toBeInTheDocument()
     // 自分自身にはフォローボタンを出さない
     expect(screen.queryByRole('button', { name: '@taro をフォロー' })).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'フォロワー' }))
-    expect(await screen.findByText('まだフォロワーはいません')).toBeInTheDocument()
+    await screen.findByText('まだフォロワーはいません')
   })
 
   it('存在しないユーザーは見つからない旨を出す', async () => {
     mockApi({ '/api/users/nobody': notFound, '/api/users/nobody/followers': notFound })
     renderApp('/users/nobody/followers')
 
-    expect(await screen.findByText('@nobody は存在しないか、表示できません。')).toBeInTheDocument()
+    await screen.findByText('@nobody は存在しないか、表示できません。')
   })
 })
 
@@ -184,8 +184,8 @@ describe('プロフィール編集', () => {
     await userEvent.type(screen.getByRole('textbox', { name: /自己紹介/ }), 'よろしく')
     await userEvent.click(screen.getByRole('button', { name: '保存する' }))
 
-    expect(await screen.findByText('プロフィールを更新しました')).toBeInTheDocument()
-    expect(await screen.findByRole('heading', { name: '新しい名前', level: 2 })).toBeInTheDocument()
+    await screen.findByText('プロフィールを更新しました')
+    await screen.findByRole('heading', { name: '新しい名前', level: 2 })
     // ナビゲーションに出ていた元の表示名（太郎）は残らない
     expect(screen.queryByText('太郎')).not.toBeInTheDocument()
     const [, init] = fetchMock.mock.calls.find(([path]) => path === '/api/me') ?? []
@@ -216,6 +216,6 @@ describe('プロフィール編集', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: '保存する' }))
 
-    expect(await screen.findByText('表示名を入力してください')).toBeInTheDocument()
+    await screen.findByText('表示名を入力してください')
   })
 })
