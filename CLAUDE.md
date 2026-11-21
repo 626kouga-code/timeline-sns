@@ -22,6 +22,8 @@
 ## mainブランチ
 
 - mainへの直接pushは禁止。必ずブランチを切ってPR経由でマージする。
+- CI（[.github/workflows/ci.yml](.github/workflows/ci.yml)）の5つのジョブ（backend-lint・backend-test・frontend-lint・frontend-test・e2e）がすべて成功したPRだけマージできる（ブランチ保護の必須チェック）。詳細は [docs/09_ci-cd.md](docs/09_ci-cd.md)。
+- Dependabot が作る依存更新のPR（`chore(deps): ...`）は、Issue登録とブランチ命名のルールの例外とする。CIが通ればマージしてよい。
 
 ## Pull Request
 

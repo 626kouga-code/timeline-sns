@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node scripts/reset-db.mjs && playwright test",
+    "test:e2e": "node scripts/reset-db.mjs && playwright test --project e2e",
     "test:load": "node scripts/reset-db.mjs && cross-env E2E_LOAD=1 playwright test",
     "typecheck": "tsc --noEmit",
     "report": "playwright show-report"

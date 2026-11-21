@@ -1,0 +1,105 @@
+# Dependabot: 使っている依存に更新が出たら、更新の PR を週 1 回作る（docs/09）。
+# PR が増えすぎないよう、minor・patch はエコシステム（ディレクトリ）ごとに 1 つの PR にまとめる。メジャー更新は個別の PR。
+# CI（ci.yml）が通れば、そのままマージしてよい。
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # typescript-eslint が 6.1 未満にしか対応していないため、TypeScript は 6.0 系に固定している
+      - dependency-name: typescript
+        versions: [">=6.1.0"]
+
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      # @playwright/test と playwright-core（@axe-core/playwright が使う）は同じ版でないと型が合わないので、必ず一緒に上げる
+      playwright:
+        patterns: ["@playwright/test", "playwright-core"]
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # typescript-eslint が 6.1 未満にしか対応していないため、TypeScript は 6.0 系に固定している
+      - dependency-name: typescript
+        versions: [">=6.1.0"]
+
+  - package-ecosystem: npm
+    directory: /perf
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # typescript-eslint が 6.1 未満にしか対応していないため、TypeScript は 6.0 系に固定している
+      - dependency-name: typescript
+        versions: [">=6.1.0"]
+
+  - package-ecosystem: gradle
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  # docker-compose.yml のイメージ（postgres・s3mock・mailpit・k6）
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
