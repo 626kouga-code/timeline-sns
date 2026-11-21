@@ -7,10 +7,11 @@ GitHub Actions を使う。
 | タイミング | 実行内容 |
 | --- | --- |
 | PR の作成・更新、main への push | CI（[ci.yml](../.github/workflows/ci.yml)）。バックエンド・フロントエンドの静的解析とテスト、E2E テスト |
-| main へのマージ | 上記に加えて本番へデプロイする（フロントは S3＋CloudFront へ配置し、バックエンドはコンテナイメージを作ってサーバーへ反映する） |
+| main へのマージ | 上記に加えて本番へデプロイする（フロントは S3＋CloudFront へ配置し、バックエンドはコンテナイメージを作って ECS Fargate へ反映する） |
 | 手動（任意のタイミング） | パフォーマンステスト（[performance.yml](../.github/workflows/performance.yml)）、表示時間の判定・負荷中の計測を含む E2E（[e2e.yml](../.github/workflows/e2e.yml)）。[テスト方針](08_testing.md)を参照 |
 
-- デプロイの具体的な手順は AWS 構成が決まってから定義する
+- デプロイの流れ：フロントはビルドして S3 に置き、CloudFront の `/index.html` を無効化する。バックエンドは ARM のコンテナイメージを作って ECR に置き、ECS のサービスを更新する（[AWS 構成](12_aws-architecture.md#構築とデプロイ)。ワークフローは構築の Issue で作る）
+- 本番は普段は止めておき、使うときに GitHub Actions の手動実行で起動・停止する（[起動と停止](12_aws-architecture.md#起動と停止)）
 - AWS への認証には、GitHub Actions の OIDC 連携を使い、長期のアクセスキーは保存しない
 
 ## CI（PR ごと）
