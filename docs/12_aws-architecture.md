@@ -1,0 +1,213 @@
+# AWS 構成
+
+[目次に戻る](README.md)
+
+本番環境は AWS の東京リージョン（`ap-northeast-1`）に作る。EC2 は使わず、フロントエンドは S3＋CloudFront で配信し、バックエンド（Spring Boot）は ECS Fargate のコンテナで動かす。
+
+環境は常に置いておかず、**必要なときに Terraform で作ってデプロイし、動作確認が終わったら全部消す**。作り直しは何度でもできる（[作成と削除](#作成と削除)）。
+
+- 決定日：2026-11-21（#6）。2026-11-22 に、NAT Gateway を使う構成（講義の構成に合わせる）と、作って確認したら消す使い方に変更
+- 構築（Terraform・ワークフロー）は別の Issue で行う。この文書は構築の設計図として、決めたことと理由を残す
+
+## 構成図
+
+```mermaid
+flowchart TB
+    user["ブラウザ"] -- HTTPS --> cf["CloudFront<br/>（入口・HTTPS）"]
+
+    subgraph aws["AWS（ap-northeast-1）"]
+        cf -- "/*" --> s3web[("S3<br/>フロントのビルド")]
+        cf -- "/media/*" --> s3media[("S3<br/>投稿画像・アイコン")]
+        cf -- "/api/*（VPC オリジン）" --> alb
+
+        subgraph vpc["VPC"]
+            alb["ALB（内部）<br/>プライベートサブネット"] --> task["ECS Fargate<br/>Spring Boot<br/>プライベートサブネット"]
+            task --> rds[("RDS PostgreSQL 18<br/>プライベートサブネット")]
+            task -- "外への通信" --> nat["NAT Gateway<br/>パブリックサブネット"]
+        end
+
+        task -- "画像の保存（VPC エンドポイント）" --> s3media
+
+        subgraph ops["運用・管理"]
+            ecr["ECR<br/>コンテナイメージ"]
+            ssm["SSM Parameter Store<br/>秘密情報"]
+            logs["CloudWatch Logs<br/>アラーム → SNS メール"]
+        end
+
+        nat -. イメージの取得 .-> ecr
+        nat -. 秘密の読み取り .-> ssm
+        nat -. ログ .-> logs
+    end
+```
+
+## なぜこの構成か
+
+| 要件・制約 | この構成での対応 |
+| --- | --- |
+| ログイン状態の Cookie（`SameSite=Strict`）は、フロントと API が同じオリジンでないと送られない | CloudFront を唯一の入口にして、パスで S3 と API に振り分ける（ローカルで Vite が `/api` をプロキシしているのと同じ形） |
+| EC2 を使わない | バックエンドは Fargate（サーバーの管理が不要なコンテナ実行環境）で動かす |
+| Fargate のタスクは起動のたびに IP アドレスが変わる | ALB を間に置き、新しいタスクへ自動で振り分ける。API Gateway は 1 リクエスト 10MB の上限があり、画像 4 枚の投稿（最大 25MB）が通らないので使わない |
+| Fargate はタスクを止めると中身が消える | DB は RDS、画像は S3 に置き、タスクは何も保持しない |
+| アプリのサーバーをインターネットから直接触れないようにしたい | Fargate のタスクはプライベートサブネットに置き、公開 IP を付けない。外（ECR・CloudWatch Logs・SSM）への通信は NAT Gateway を通す（講義の構成と同じ） |
+| 費用を抑えたい（クレジットは最大 $200） | 環境を置きっぱなしにせず、動作確認が終わったら全部消す。NAT Gateway の固定費（月 約 $45）も、動かしている時間の分（1 時間 約 $0.07）しかかからない（[費用の目安](#費用の目安)） |
+
+講義の構成との違いは ALB だけ。講義では ALB をインターネットに公開するが、ここでは「内部」ALB にして CloudFront の VPC オリジンでつなぐ（CloudFront を通らない API へのアクセスを防げ、ALB の公開 IPv4 アドレスの料金もかからない）。
+
+## 各サービスの役割と設定
+
+### CloudFront
+
+ディストリビューションを 1 つ作り、パスで振り分ける（ビヘイビア）。当面はドメインを取らず、CloudFront の URL（`https://xxxx.cloudfront.net`）をそのまま使う。作り直すたびに URL は変わる。
+
+| パス | オリジン | キャッシュ | 補足 |
+| --- | --- | --- | --- |
+| `/api/*` | ALB（VPC オリジン） | しない | すべてのメソッド・Cookie・クエリ・ヘッダー（Host 以外）を転送する |
+| `/media/*` | S3（画像のバケット） | 長く（1 年） | 画像のキーは内容ごとに変わるので、長くキャッシュしてよい。CloudFront Functions で先頭の `/media` を外して S3 のキーにする |
+| `/*`（既定） | S3（フロントのバケット） | `assets/` は長く、`index.html` はしない | 画面のパス（`/home`・`/users/...` など）は CloudFront Functions で `/index.html` に書き換える（SPA のため） |
+
+- S3 のバケットは公開しない。CloudFront からだけ読めるようにする（OAC）
+- SPA の振り分けに「エラー時に `index.html` を返す」設定（カスタムエラーレスポンス）は使わない。この設定はディストリビューション全体にかかり、API の 404（`NOT_FOUND` の JSON）まで `index.html` に置き換えてしまうため。CloudFront Functions を既定のビヘイビアにだけ付ける
+- 料金は無料枠（月 1TB の転送・1,000 万リクエスト）に収まる見込み
+
+### ネットワーク（VPC・ALB・NAT Gateway）
+
+- VPC は 2 つのアベイラビリティゾーンにまたがるパブリック・プライベートサブネットを作る（ALB と RDS のサブネットグループに 2 つ以上が必要なため）
+- ALB はプライベートサブネットに置く「内部」ALB にし、CloudFront の **VPC オリジン**でつなぐ
+- ヘルスチェックは `/actuator/health`（ログに出さない設定にしてある。[運用](10_operations.md)）
+- Fargate のタスクと RDS もプライベートサブネットに置く。どちらも公開 IP を持たない
+- **NAT Gateway は 1 台**（片方の AZ のパブリックサブネットに置き、Elastic IP を付ける）。プライベートサブネットのタスクは、これを通って ECR・CloudWatch Logs・SSM に出る。AZ ごとに置くと料金が倍になるので、動作確認用としては 1 台で足りる
+- S3 へはゲートウェイ型の VPC エンドポイント（無料）を通す。画像の読み書きが NAT Gateway を通らないので、NAT のデータ処理料金（$0.062/GB）がかからない
+
+| セキュリティグループ | 受け付ける通信 |
+| --- | --- |
+| ALB | CloudFront の VPC オリジンから（HTTP 80） |
+| Fargate のタスク | ALB から（8080） |
+| RDS | Fargate のタスクから（5432） |
+
+### ECS Fargate（バックエンド）
+
+- タスクのサイズ：ARM（Graviton）、0.5 vCPU・メモリ 1GB、1 タスク。JVM のヒープはコンテナのメモリの 75% まで（`-XX:MaxRAMPercentage=75`）
+- イメージは ECR に置く（Dockerfile は構築の Issue で作る）。タグは Git のコミット ID
+- 環境変数（[application.yml](../backend/src/main/resources/application.yml) の値を上書きする）
+
+    | 変数 | 値 |
+    | --- | --- |
+    | `DB_URL` | RDS のエンドポイント（`jdbc:postgresql://<RDS>:5432/timeline`） |
+    | `DB_USERNAME`・`DB_PASSWORD` | SSM Parameter Store から（秘密） |
+    | `JWT_SECRET` | SSM Parameter Store から（秘密。32 バイト以上） |
+    | `STORAGE_BUCKET` | 画像のバケット名 |
+    | `STORAGE_ENDPOINT` | 空（既定値はローカルの S3Mock なので、必ず空にする。空ならタスクの IAM ロールで本物の S3 につながる） |
+    | `STORAGE_PUBLIC_BASE_URL` | `/media`（画像を API ではなく CloudFront から配る） |
+
+- プロファイルは指定しない（本番の設定。ログは JSON、Swagger UI は無効）
+- ログは `awslogs` ドライバで CloudWatch Logs の `/timeline-sns/backend` に送る（アプリは JSON を標準出力に出す作りになっている）
+- DB のマイグレーション（Flyway）は起動時に自動で流れる。作ったばかりの空の DB にも、起動時にすべてのテーブルが作られる
+- 起動にかかる時間（Spring Boot と Flyway）を見込んで、ヘルスチェックの猶予を 2 分ほどとる
+
+### RDS（PostgreSQL）
+
+- PostgreSQL 18（スキーマで `uuidv7()` を使うため 18 が必須。構築時に RDS が 18 に対応していることを確かめる）
+- `db.t4g.micro`、シングル AZ、ストレージ gp3 20GB
+- 公開しない（パブリックアクセスなし）。Fargate のタスクからだけつながる
+- 拡張は `pg_trgm` を使う（ユーザー検索。RDS で使える）
+- 消す前提なので、削除保護は付けず、削除時の最終スナップショットも取らない。自動バックアップは 1 日（最小）にする
+
+### S3
+
+| バケット | 中身 | 設定 |
+| --- | --- | --- |
+| フロント | `frontend/` の本番ビルド（`dist/`） | 非公開（CloudFront の OAC）。消すときは中身ごと消す |
+| 画像 | 投稿画像・アイコン（[ImageProcessor](../backend/src/main/java/com/timelinesns/image/ImageProcessor.java) で変換済み） | 非公開（CloudFront の OAC）。消すときは中身ごと消す |
+| Terraform の状態 | Terraform の状態ファイル | 非公開、バージョニング有効。**これだけは消さずに残す**（最初に手で作る） |
+
+### 秘密情報と権限
+
+- DB の認証情報と `JWT_SECRET` は SSM Parameter Store（SecureString）に置き、タスク定義の `secrets` で環境変数として渡す。値は Terraform で作るたびにランダムに生成し、リポジトリや Terraform のコードには書かない
+- IAM ロールは用途ごとに分け、必要な権限だけを付ける
+
+| ロール | 使う人 | 権限 |
+| --- | --- | --- |
+| タスクロール | 動いているアプリ | 画像のバケットの読み書き・削除 |
+| タスク実行ロール | ECS（タスクの起動） | ECR からイメージを取る、CloudWatch Logs に書く、SSM の秘密を読む |
+| デプロイ用ロール | GitHub Actions（OIDC） | Terraform で環境を作る・消す、フロントのバケットへの書き込み、CloudFront の無効化、ECR への push、ECS のサービス更新 |
+
+GitHub Actions は OIDC で一時的な認証情報を受け取る。長期のアクセスキーは作らない。デプロイ用ロールは、このリポジトリの main ブランチからだけ使えるように制限する。OIDC の設定とデプロイ用ロールは、環境を消しても残す（次に作るときに使うため。料金はかからない）。
+
+## 作成と削除
+
+環境は必要なときに作り、動作確認が終わったら全部消す。どちらも GitHub Actions の手動実行（`workflow_dispatch`）でボタン 1 つで行う（ワークフローは構築の Issue で作る）。
+
+| 操作 | 手順 | かかる時間 |
+| --- | --- | --- |
+| 作る | ① `terraform apply` で環境を作る → ② バックエンドのイメージを ECR に push し、ECS のサービスを起動する → ③ フロントをビルドして S3 に置く → ④ `/actuator/health` が UP になるまで待ち、CloudFront の URL を表示する | 20〜30 分（RDS と CloudFront の作成が長い） |
+| 動作確認 | CloudFront の URL をブラウザで開き、登録・投稿・画像の表示などを確かめる | 任意 |
+| 全部消す | `terraform destroy` で、状態ファイルのバケットと OIDC 以外をすべて消す | 10〜20 分 |
+
+- **消すと DB の中身と投稿画像も消える**。作り直したときは空の状態から始まる（ユーザー登録からやり直す）
+- 消し忘れると料金がかかり続ける（1 日 約 $3.7）。動作確認が終わったらその日のうちに消す。AWS Budgets の予算アラートで、消し忘れに気づけるようにする
+- `terraform destroy` が途中で失敗したら、もう一度実行する。それでも残ったものは AWS のコンソールで確かめて消す
+
+## 費用の目安
+
+東京リージョンのオンデマンド料金（AWS の価格表、2026-11 時点、税別）で計算した。環境があるあいだだけかかる。
+
+| 項目 | 単価 | 1 時間あたり |
+| --- | --- | --- |
+| NAT Gateway | $0.062/時 ＋ $0.062/GB（処理したデータ） | $0.062 |
+| NAT Gateway の Elastic IP（公開 IPv4） | $0.005/時 | $0.005 |
+| ALB | $0.0243/時 ＋ $0.008/LCU・時 | $0.03 前後 |
+| Fargate（ARM、0.5 vCPU・1GB） | vCPU $0.04045/時、メモリ $0.00442/GB・時 | $0.025 |
+| RDS（db.t4g.micro） | $0.025/時 | $0.025 |
+| RDS のストレージ（gp3 20GB） | $0.138/GB・月 | $0.004 |
+| ECR・S3・CloudFront・CloudWatch・SSM | ほぼ無料枠 | ほぼ $0 |
+| **合計** | | **約 $0.15** |
+
+- 例：作って 3 時間動作確認して消すと、**1 回 約 $0.5**（作成・削除の時間を含めると 4 時間で 約 $0.6）
+- 消している間にかかるのは、Terraform の状態ファイルのバケット（数 KB）だけで、ほぼ $0
+- ALB と NAT Gateway は 1 時間未満でも 1 時間分かかる。Fargate と RDS は秒単位
+- 参考：常に動かし続けると月 約 $110。費用のほとんどは NAT Gateway・ALB・RDS の固定費
+- クレジット（9/30 時点で約 $158）は、この使い方ならほぼ減らない
+- アカウントは無料プランのため 2027-01 ごろに閉じられる。それ以降も使うなら有料プランへ切り替え、AWS Budgets で予算のアラートを設定する（[運用](10_operations.md)）
+- 料金は構築するときに AWS の料金ページで確かめ直す
+
+## バックアップと復旧
+
+動作確認が終わったら全部消す使い方なので、残しておくべきデータはない。
+
+| 対象 | 方法 |
+| --- | --- |
+| インフラ | Terraform のコード。`terraform apply` で何度でも作り直せる |
+| フロント・バックエンド | Git。作るたびに、指定したコミットからビルドし直す |
+| DB・投稿画像 | 残さない（消すと一緒に消える） |
+
+常に動かす本番に切り替えるときは、データを守る設定を足す（[今後の選択肢](#今後の選択肢)）。
+
+## 構築とデプロイ
+
+### Terraform
+
+- インフラはすべて Terraform で作る。コードはリポジトリの `infra/terraform/` に置く
+- 状態ファイルは S3 のバケットに置き、S3 のロック（`use_lockfile`）で同時実行を防ぐ。状態ファイルのバケットだけは最初に手で作る
+- 作るもの：VPC・サブネット・NAT Gateway・セキュリティグループ、S3（フロント・画像）、CloudFront（VPC オリジン・CloudFront Functions）、ALB、ECS（クラスター・サービス・タスク定義）、ECR、RDS、SSM Parameter Store、IAM ロール、CloudWatch（ロググループ・メトリクスフィルタ・アラーム）、SNS
+- 消している間も残すもの（別の Terraform の構成に分ける）：GitHub Actions の OIDC とデプロイ用ロール、AWS Budgets
+- `terraform destroy` で全部消えるように、S3 と ECR は中身があっても消せる設定（`force_destroy`・`force_delete`）にし、RDS は削除保護なし・最終スナップショットなしにする
+
+### デプロイ（手動）
+
+環境がない時間のほうが長いので、main へのマージでは自動でデプロイしない。「作る」のワークフローの中でデプロイする（[作成と削除](#作成と削除)）。
+
+1. フロント：`npm run build` → S3 に同期（`assets/` は長いキャッシュ、`index.html` はキャッシュしない）
+2. バックエンド：ARM のイメージをビルド → ECR に push → ECS のサービスを起動
+3. 作ったあとにコードを直して確かめ直したいときは、同じワークフローをもう一度実行する（環境はそのままで、新しい版に入れ替える。CloudFront の `/index.html` も無効化する）
+
+### アプリ側で必要な準備（構築の Issue で行う）
+
+- バックエンドの Dockerfile（ARM、Java 25 の JRE、JVM のメモリ設定）
+- 本番の環境変数（上の表）。`STORAGE_PUBLIC_BASE_URL=/media` にしたとき、画面の画像 URL が `/media/<キー>` になり、CloudFront 経由で表示されることを確かめる。ローカル開発は今まで通り `/api/media`（S3Mock）
+- メール（SES）は、メールを送る機能（Could）を作るときに追加する
+
+## 今後の選択肢
+
+- 常に動かす本番にする：RDS の削除保護・自動バックアップ（7 日）・最終スナップショット、画像のバケットのバージョニングを有効にし、main へのマージで自動デプロイする。費用は月 約 $110。NAT Gateway の代わりに Fargate をパブリックサブネットに置けば、月 約 $45 下げられる
+- 独自ドメイン：Route 53 でドメインを取り、ACM の証明書を CloudFront に付ける。URL が変わるだけで、構成は変わらない
+- 利用者が増えたら：Fargate のタスク数を増やす（画像は S3、DB は RDS にあるので、そのまま増やせる）。RDS のサイズを上げる

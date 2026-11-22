@@ -127,7 +127,7 @@ npm test
 ## 開発の進め方
 
 - テスト：PRごとにGitHub Actionsでバックエンド（JUnit 5 + Testcontainers）とフロントエンド（Vitest）のテストを実行し、失敗したらマージしない（[テスト方針](./docs/08_testing.md)）
-- デプロイ：mainへのマージで本番へ自動デプロイする（[CI/CD](./docs/09_ci-cd.md)。具体的な手順はAWS構成の決定後に定義）
-- 運用：ログと監視はCloudWatch、異常時はSNSからメールで通知する。DBは毎日バックアップする（[運用](./docs/10_operations.md)）
+- デプロイ：AWSの環境は動作確認のときだけGitHub Actionsの手動実行で作ってデプロイし、終わったら全部消す（[CI/CD](./docs/09_ci-cd.md)、[AWS構成](./docs/12_aws-architecture.md)）
+- 運用：ログと監視はCloudWatch、異常時はSNSからメールで通知する。DBのバックアップ方針もここにまとめる（[運用](./docs/10_operations.md)）
 - 開発サーバーのポートは、フロント`5173`・バックエンド`8080`に固定する（[.claude/skills/dev-server-ports/SKILL.md](.claude/skills/dev-server-ports/SKILL.md)）
 - コミット・PR作成前に品質チェックを行う（[.claude/skills/quality-check/SKILL.md](.claude/skills/quality-check/SKILL.md)）
