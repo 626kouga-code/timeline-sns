@@ -1,0 +1,9 @@
+# Terraform の作業用ファイル・状態ファイル（状態は S3 に置く）
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+# 通知先のメールアドレスなど、手元だけの値
+*.tfvars
+!*.tfvars.example

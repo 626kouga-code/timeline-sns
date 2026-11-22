@@ -67,7 +67,7 @@ flowchart TB
 
 - S3 のバケットは公開しない。CloudFront からだけ読めるようにする（OAC）
 - SPA の振り分けに「エラー時に `index.html` を返す」設定（カスタムエラーレスポンス）は使わない。この設定はディストリビューション全体にかかり、API の 404（`NOT_FOUND` の JSON）まで `index.html` に置き換えてしまうため。CloudFront Functions を既定のビヘイビアにだけ付ける
-- **OGP（投稿の URL を SNS に貼ったときのプレビュー）**：SNS のクローラーは JavaScript を実行しないので、`index.html` からは投稿の内容を読めない。既定のビヘイビアの CloudFront Functions で、User-Agent がクローラー（`Twitterbot`・`facebookexternalhit`・`Slackbot`・`Discordbot`・`Line` など）で、パスが `/posts/{id}` のときだけ、パスを `/api/ogp/posts/{id}` に書き換えてオリジンを ALB に切り替える（CloudFront Functions のオリジンの変更機能。構築時に動くことを確かめる）。バックエンドは OGP の meta タグを入れた HTML を返す。人が開いたときは今までどおり画面が出る
+- **OGP（投稿の URL を SNS に貼ったときのプレビュー）**：SNS のクローラーは JavaScript を実行しないので、`index.html` からは投稿の内容を読めない。既定のビヘイビアの CloudFront Functions で、User-Agent がクローラー（`Twitterbot`・`facebookexternalhit`（Facebook・LINE）・`Slackbot`・`Discordbot` など。人が使うアプリ内ブラウザの User-Agent に含まれる語は入れない。OGP の HTML から画面に戻ったとき、また回されてしまうため）で、パスが `/posts/{id}` のときだけ、パスを `/api/ogp/posts/{id}` に書き換えてオリジンを ALB に切り替える（CloudFront Functions の `selectRequestOriginById`。2026-11-22 に動くことを確かめた。関数は [infra/terraform/app/functions](../infra/terraform/app/functions)）。バックエンドは OGP の meta タグを入れた HTML を返す。人が開いたときは今までどおり画面が出る
 - 料金は無料枠（月 1TB の転送・1,000 万リクエスト）に収まる見込み
 
 ### ネットワーク（VPC・ALB・NAT Gateway）
@@ -81,7 +81,7 @@ flowchart TB
 
 | セキュリティグループ | 受け付ける通信 |
 | --- | --- |
-| ALB | CloudFront の VPC オリジンから（HTTP 80） |
+| ALB | CloudFront から（HTTP 80）。VPC オリジンの通信は VPC 内を通るが、送信元は CloudFront の IP になるので、VPC の CIDR ではなく CloudFront のマネージドプレフィックスリスト（`com.amazonaws.global.cloudfront.origin-facing`）を許可する |
 | Fargate のタスク | ALB から（8080） |
 | RDS | Fargate のタスクから（5432） |
 
@@ -143,7 +143,7 @@ GitHub Actions は OIDC で一時的な認証情報を受け取る。長期の�
 | --- | --- | --- |
 | 作る | ① `terraform apply` で環境を作る → ② バックエンドのイメージを ECR に push し、ECS のサービスを起動する → ③ フロントをビルドして S3 に置く → ④ `/actuator/health` が UP になるまで待ち、CloudFront の URL を表示する | 20〜30 分（RDS と CloudFront の作成が長い） |
 | 動作確認 | CloudFront の URL をブラウザで開き、登録・投稿・画像の表示などを確かめる | 任意 |
-| 全部消す | `terraform destroy` で、状態ファイルのバケットと OIDC 以外をすべて消す | 10〜20 分 |
+| 全部消す | `terraform destroy` で、残す側（ECR・SNS・Budgets・OIDC）と状態ファイルのバケット以外をすべて消す | 10〜20 分 |
 
 - **消すと DB の中身と投稿画像も消える**。作り直したときは空の状態から始まる（ユーザー登録からやり直す）
 - 消し忘れると料金がかかり続ける（1 日 約 $3.7）。動作確認が終わったらその日のうちに消す。AWS Budgets の予算アラートで、消し忘れに気づけるようにする
@@ -190,9 +190,11 @@ GitHub Actions は OIDC で一時的な認証情報を受け取る。長期の�
 
 - インフラはすべて Terraform で作る。コードはリポジトリの `infra/terraform/` に置く
 - 状態ファイルは S3 のバケットに置き、S3 のロック（`use_lockfile`）で同時実行を防ぐ。状態ファイルのバケットだけは最初に手で作る
-- 作るもの：VPC・サブネット・NAT Gateway・セキュリティグループ、S3（フロント・画像）、CloudFront（VPC オリジン・CloudFront Functions）、ALB、ECS（クラスター・サービス・タスク定義）、ECR、RDS、SSM Parameter Store、IAM ロール、CloudWatch（ロググループ・メトリクスフィルタ・アラーム）、SNS
-- 消している間も残すもの（別の Terraform の構成に分ける）：GitHub Actions の OIDC とデプロイ用ロール、AWS Budgets
-- `terraform destroy` で全部消えるように、S3 と ECR は中身があっても消せる設定（`force_destroy`・`force_delete`）にし、RDS は削除保護なし・最終スナップショットなしにする
+- 手順は [infra/README.md](../infra/README.md)。構成は 2 つに分ける
+  - `infra/terraform/app`（作って消す）：VPC・サブネット・NAT Gateway・セキュリティグループ、S3（フロント・画像）、CloudFront（VPC オリジン・CloudFront Functions）、ALB、ECS（クラスター・サービス・タスク定義）、RDS、SSM Parameter Store、IAM ロール、CloudWatch（ロググループ・メトリクスフィルタ・アラーム）
+  - `infra/terraform/persistent`（消さずに残す。費用はほぼ $0）：ECR（環境を作る前にイメージを push できるように。最新 3 個だけ残す）、アラームの通知先の SNS（メールの購読確認を 1 回で済ませるため）、AWS Budgets（月 $5）。GitHub Actions の OIDC とデプロイ用ロールは #93 で足す
+- `terraform destroy` で全部消えるように、S3 は中身があっても消せる設定（`force_destroy`）にし、RDS は削除保護なし・最終スナップショットなしにする
+- 認証は環境変数で渡す（手元は `AWS_PROFILE=trello-app`、GitHub Actions は OIDC）
 
 ### デプロイ（手動）
 
@@ -222,7 +224,7 @@ cd frontend && npm run dev                           # 画面は http://localhos
 docker compose --profile app stop backend            # 止める
 ```
 
-2026-11-22 に、amd64 と arm64（まねて動かしたもの）の両方で、登録・画像付き投稿・画像の配信・OGP まで動くことを確かめた。
+2026-11-22 に、amd64 と arm64（まねて動かしたもの）の両方で、登録・画像付き投稿・画像の配信・OGP まで動くことを確かめた。同じ日に AWS に作り、CloudFront の URL で画面・ログイン（Cookie）・画像付き投稿と `/media` での表示・OGP（クローラーの振り分け）まで動くことを確かめた（0.5 vCPU での起動は 46 秒）。
 
 - 画像を `/media/<キー>` で配る設定（`STORAGE_PUBLIC_BASE_URL=/media`）は CloudFront があって初めて動くので、AWS に作ったあとに確かめる（#91）
 - メール（SES）は使わない（メールを送る機能は作らない）
