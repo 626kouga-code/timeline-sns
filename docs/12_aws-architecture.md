@@ -63,10 +63,11 @@ flowchart TB
 | --- | --- | --- | --- |
 | `/api/*` | ALB（VPC オリジン） | しない | すべてのメソッド・Cookie・クエリ・ヘッダー（Host 以外）を転送する |
 | `/media/*` | S3（画像のバケット） | 長く（1 年） | 画像のキーは内容ごとに変わるので、長くキャッシュしてよい。CloudFront Functions で先頭の `/media` を外して S3 のキーにする |
-| `/*`（既定） | S3（フロントのバケット） | `assets/` は長く、`index.html` はしない | 画面のパス（`/home`・`/users/...` など）は CloudFront Functions で `/index.html` に書き換える（SPA のため） |
+| `/*`（既定） | S3（フロントのバケット） | `assets/` は長く、`index.html` はしない | 画面のパス（`/home`・`/users/...` など）は CloudFront Functions で `/index.html` に書き換える（SPA のため）。SNS のクローラーからの `/posts/{id}` だけは API に回す（下の OGP） |
 
 - S3 のバケットは公開しない。CloudFront からだけ読めるようにする（OAC）
 - SPA の振り分けに「エラー時に `index.html` を返す」設定（カスタムエラーレスポンス）は使わない。この設定はディストリビューション全体にかかり、API の 404（`NOT_FOUND` の JSON）まで `index.html` に置き換えてしまうため。CloudFront Functions を既定のビヘイビアにだけ付ける
+- **OGP（投稿の URL を SNS に貼ったときのプレビュー）**：SNS のクローラーは JavaScript を実行しないので、`index.html` からは投稿の内容を読めない。既定のビヘイビアの CloudFront Functions で、User-Agent がクローラー（`Twitterbot`・`facebookexternalhit`・`Slackbot`・`Discordbot`・`Line` など）で、パスが `/posts/{id}` のときだけ、パスを `/api/ogp/posts/{id}` に書き換えてオリジンを ALB に切り替える（CloudFront Functions のオリジンの変更機能。構築時に動くことを確かめる）。バックエンドは OGP の meta タグを入れた HTML を返す。人が開いたときは今までどおり画面が出る
 - 料金は無料枠（月 1TB の転送・1,000 万リクエスト）に収まる見込み
 
 ### ネットワーク（VPC・ALB・NAT Gateway）
@@ -98,6 +99,7 @@ flowchart TB
     | `STORAGE_BUCKET` | 画像のバケット名 |
     | `STORAGE_ENDPOINT` | 空（既定値はローカルの S3Mock なので、必ず空にする。空ならタスクの IAM ロールで本物の S3 につながる） |
     | `STORAGE_PUBLIC_BASE_URL` | `/media`（画像を API ではなく CloudFront から配る） |
+    | `APP_PUBLIC_URL` | CloudFront の URL（`https://xxxx.cloudfront.net`）。OGP の URL・画像を絶対 URL にするのに使う。作り直すたびに変わるので、Terraform が CloudFront のドメインを渡す |
 
 - プロファイルは指定しない（本番の設定。ログは JSON、Swagger UI は無効）
 - ログは `awslogs` ドライバで CloudWatch Logs の `/timeline-sns/backend` に送る（アプリは JSON を標準出力に出す作りになっている）

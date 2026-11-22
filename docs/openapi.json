@@ -361,6 +361,37 @@
         "tags" : [ "通知" ]
       }
     },
+    "/api/ogp/posts/{id}" : {
+      "get" : {
+        "description" : "SNS のクローラー向けに、OGP の meta タグを入れた HTML を返す。人が開いたときは投稿の画面へ移る",
+        "operationId" : "post",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "content" : {
+              "text/html" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "投稿が存在しないか、表示できない（サイト名だけの HTML を返す）"
+          }
+        },
+        "security" : [ { }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "投稿の OGP",
+        "tags" : [ "OGP" ]
+      }
+    },
     "/api/posts" : {
       "post" : {
         "description" : "本文と画像 0〜4 枚（JPEG / PNG / WebP / GIF、1 枚 5MB まで）。画像があれば本文は空でもよい",

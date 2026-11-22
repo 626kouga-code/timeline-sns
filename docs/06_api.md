@@ -37,6 +37,7 @@ REST（JSON）で提供する。一覧は `?cursor=<最後のid>&limit=20` の�
 | | `PUT /api/users/{handle}/block` `DELETE /api/users/{handle}/block` | ブロック・解除 |
 | | `GET /api/me` `PATCH /api/me` `DELETE /api/me` | 自分の情報取得・更新（`{ displayName, bio }` を両方送る）・退会 |
 | | `PUT /api/me/avatar`（multipart の `file`） `DELETE /api/me/avatar` | アイコン画像の変更・削除。画面で正方形に切り抜いて送る。サーバーで中身から形式を判定し（JPEG / PNG / WebP / GIF、5MB まで）、Exif を除いて 400×400 に作り直す。応答は更新後の自分の情報 |
+| OGP | `GET /api/ogp/posts/{id}` | 投稿の OGP（F-14）。SNS のクローラー向けに、OGP の meta タグ（表示名・本文の冒頭 100 文字・1 枚目の画像の絶対 URL）を入れた HTML を返す（ゲスト可）。人が開くと投稿詳細の画面へ移る。見つからなければ 404 の HTML。本番では CloudFront がクローラーからの `/posts/{id}` をここへ回す（[AWS 構成](12_aws-architecture.md#cloudfront)） |
 | 画像 | `GET /api/media/{key}` | 保存した画像の配信（ゲスト可。キーは保存のたびに変わるので長期キャッシュ）。各応答の `avatarUrl` はこの URL（本番で CloudFront から配信するときは設定で切り替える） |
 | 通知 | `GET /api/notifications` `GET /api/notifications/unread-count` `POST /api/notifications/read` | 一覧（新しい順。種類は LIKE / COMMENT / REPLY / FOLLOW。凍結ユーザー・ブロック関係のユーザーからの通知は除く）・未読数（`{ count }`、100 件で打ち切り）・既読化（`{ until }` を渡すと、画面に表示した一番新しい通知以前だけを既読にする）。自分への自分の操作は通知せず、いいね取り消し・フォロー解除で通知も消す |
 | 通報 | `POST /api/reports` | 通報 |

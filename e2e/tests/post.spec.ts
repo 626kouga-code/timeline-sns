@@ -1,5 +1,5 @@
 // F-10 テキスト投稿 / F-11 画像投稿 / F-12 投稿削除 / F-13 投稿詳細
-import { IMAGE_PATH } from '../support/api.ts'
+import { IMAGE_PATH, imageFile } from '../support/api.ts'
 import { expect, test } from '../support/fixtures.ts'
 import { measure } from '../support/perf.ts'
 
@@ -75,3 +75,23 @@ test('投稿をクリックすると詳細が開き、メニューから削除�
   await expect(page.getByText(post.body)).toHaveCount(0)
 })
 
+
+test('投稿の OGP を返し、人が開いたら投稿詳細へ移る（F-14）', async ({ page, request, api, newUser }) => {
+  const user = await newUser('OGP の人')
+  const post = await api.createPost(user, `OGP のテスト ${user.handle}`, imageFile())
+
+  // SNS のクローラーとして取得する（本番では CloudFront が /posts/{id} をここへ回す）
+  const res = await request.get(`/api/ogp/posts/${post.id}`, { headers: { 'User-Agent': 'Twitterbot/1.0' } })
+  expect(res.status()).toBe(200)
+  const html = await res.text()
+  expect(html).toContain(`<meta property="og:title" content="OGP の人（@${user.handle}）">`)
+  expect(html).toContain(`<meta property="og:description" content="OGP のテスト ${user.handle}">`)
+  // 画像は絶対 URL で、外から読める
+  const image = html.match(/<meta property="og:image" content="([^"]+)">/)?.[1]
+  expect(image).toMatch(/^http:\/\/localhost:5173\//)
+  expect((await request.get(image!)).headers()['content-type']).toMatch(/^image\//)
+
+  await page.goto(`/api/ogp/posts/${post.id}`)
+  await expect(page).toHaveURL(`/posts/${post.id}`)
+  await expect(page.getByRole('article').filter({ hasText: `OGP のテスト ${user.handle}` })).toBeVisible()
+})

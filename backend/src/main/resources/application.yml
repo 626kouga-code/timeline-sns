@@ -53,6 +53,9 @@ management:
       show-components: never
 
 app:
+  site:
+    # 利用者がブラウザで開くサイトの URL。OGP（SNS のプレビュー）の URL・画像を絶対 URL にするのに使う。本番は CloudFront の URL
+    public-url: ${APP_PUBLIC_URL:http://localhost:5173}
   auth:
     # JWT の署名鍵（32 バイト以上）。本番は環境変数 JWT_SECRET で渡す。未設定なら起動に失敗する
     jwt-secret: ${JWT_SECRET:}
