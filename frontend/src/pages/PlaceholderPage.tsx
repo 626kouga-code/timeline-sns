@@ -9,7 +9,7 @@ export function PlaceholderPage({ title, feature, back = true }: { title: string
       <div className="px-8 py-16 text-center">
         <p className="text-lg font-bold">この画面は準備中です</p>
         <p className="mt-2 text-sm text-slate-500">{feature}</p>
-        <Link to="/" className="mt-6 inline-block text-sm text-sky-600 hover:underline">
+        <Link to="/" className="mt-6 inline-block text-sm text-sky-700 hover:underline">
           トップへ戻る
         </Link>
       </div>

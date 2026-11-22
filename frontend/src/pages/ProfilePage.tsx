@@ -23,7 +23,7 @@ function NotFound({ handle }: { handle?: string }) {
 }
 
 function Loading() {
-  return <p className="py-10 text-center text-sm text-slate-400">読み込み中…</p>
+  return <p className="py-10 text-center text-sm text-slate-500">読み込み中…</p>
 }
 
 function LoadError({ message, onRetry }: { message: string; onRetry: () => void }) {

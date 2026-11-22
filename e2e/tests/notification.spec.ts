@@ -16,9 +16,9 @@ test('いいね・コメント・フォローされると未読の件数が出�
   await loginAs(me)
 
   await page.goto('/home')
-  await expect(page.getByRole('link', { name: '通知（未読 3 件）' })).toBeVisible()
+  await expect(page.getByRole('link', { name: '通知 3 件の未読' })).toBeVisible()
 
-  await page.getByRole('link', { name: '通知（未読 3 件）' }).click()
+  await page.getByRole('link', { name: '通知 3 件の未読' }).click()
   await expect(page).toHaveURL(/\/notifications$/)
   await expect(page.getByText('があなたの投稿にいいねしました')).toBeVisible()
   await expect(page.getByText(/があなたの投稿にコメントしました/)).toBeVisible()

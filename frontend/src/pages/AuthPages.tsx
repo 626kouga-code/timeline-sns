@@ -14,7 +14,7 @@ const submitClass =
 function AuthCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="mx-auto max-w-sm px-4 py-10">
-      <div className="mb-6 flex size-12 items-center justify-center rounded-2xl bg-sky-500 text-2xl font-black text-white">t</div>
+      <div className="mb-6 flex size-12 items-center justify-center rounded-2xl bg-sky-700 text-2xl font-black text-white">t</div>
       <h1 className="mb-6 text-2xl font-black">{title}</h1>
       {children}
     </div>
@@ -30,7 +30,7 @@ function GoogleButton({ label }: { label: string }) {
       onClick={() => showToast('Google ログインは準備中です')}
       className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 py-2.5 font-semibold hover:bg-slate-50"
     >
-      <span className="text-lg font-black text-sky-600">G</span>
+      <span className="text-lg font-black text-sky-700">G</span>
       {label}
     </button>
   )
@@ -38,7 +38,7 @@ function GoogleButton({ label }: { label: string }) {
 
 function Divider() {
   return (
-    <div className="my-5 flex items-center gap-3 text-sm text-slate-400">
+    <div className="my-5 flex items-center gap-3 text-sm text-slate-500">
       <span className="h-px flex-1 bg-slate-200" />
       または
       <span className="h-px flex-1 bg-slate-200" />
@@ -100,10 +100,10 @@ export function LoginPage() {
         </button>
       </form>
       <div className="mt-4 flex justify-between text-sm">
-        <Link to="/password-reset" className="text-sky-600 hover:underline">
+        <Link to="/password-reset" className="text-sky-700 hover:underline">
           パスワードをお忘れですか？
         </Link>
-        <Link to="/signup" className="text-sky-600 hover:underline">
+        <Link to="/signup" className="text-sky-700 hover:underline">
           新規登録
         </Link>
       </div>
@@ -162,7 +162,7 @@ export function SignupPage() {
           {label}
         </label>
         <div className="relative">
-          {prefix && <span className="absolute top-1/2 left-3 mt-0.5 -translate-y-1/2 text-slate-400">{prefix}</span>}
+          {prefix && <span className="absolute top-1/2 left-3 mt-0.5 -translate-y-1/2 text-slate-500">{prefix}</span>}
           <input
             id={id}
             type={type}
@@ -210,8 +210,8 @@ export function SignupPage() {
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-1" />
           <span>
-            <a href="#" className="text-sky-600 hover:underline">利用規約</a>と
-            <a href="#" className="text-sky-600 hover:underline">プライバシーポリシー</a>に同意します
+            <a href="#" className="text-sky-700 hover:underline">利用規約</a>と
+            <a href="#" className="text-sky-700 hover:underline">プライバシーポリシー</a>に同意します
           </span>
         </label>
         {errorOf('agreedToTerms') && <p className="text-xs text-red-600">{errorOf('agreedToTerms')}</p>}
@@ -226,7 +226,7 @@ export function SignupPage() {
       </form>
       <p className="mt-4 text-center text-sm">
         アカウントをお持ちの方は{' '}
-        <Link to="/login" className="text-sky-600 hover:underline">
+        <Link to="/login" className="text-sky-700 hover:underline">
           ログイン
         </Link>
       </p>

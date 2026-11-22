@@ -12,7 +12,7 @@ import { formatRelative } from '../components/time'
 
 const TYPE_INFO: Record<NotificationType, { icon: IconName; color: string; text: string }> = {
   LIKE: { icon: 'heart', color: 'text-pink-600', text: 'があなたの投稿にいいねしました' },
-  COMMENT: { icon: 'comment', color: 'text-sky-600', text: 'があなたの投稿にコメントしました' },
+  COMMENT: { icon: 'comment', color: 'text-sky-700', text: 'があなたの投稿にコメントしました' },
   REPLY: { icon: 'comment', color: 'text-emerald-600', text: 'があなたのコメントに返信しました' },
   FOLLOW: { icon: 'user', color: 'text-violet-600', text: 'にフォローされました' },
 }
@@ -54,7 +54,7 @@ export function NotificationsPage() {
   return (
     <>
       <PageHeader title="通知" />
-      {list.isPending && <p className="py-10 text-center text-sm text-slate-400">読み込み中…</p>}
+      {list.isPending && <p className="py-10 text-center text-sm text-slate-500">読み込み中…</p>}
       {list.isError && notifications.length === 0 && (
         <div className="px-8 py-16 text-center">
           <p role="alert" className="text-slate-600">
@@ -101,7 +101,7 @@ function NotificationItem({ notification: n }: { notification: Notification }) {
       <Icon name={info.icon} filled={n.type === 'LIKE'} className={`mt-1 size-6 shrink-0 ${info.color}`} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
-          <Link to={`/users/${n.actor.handle}`} onClick={(e) => e.stopPropagation()}>
+          <Link to={`/users/${n.actor.handle}`} onClick={(e) => e.stopPropagation()} aria-label={n.actor.displayName}>
             <Avatar user={n.actor} size="sm" />
           </Link>
           <span className="flex items-center gap-2 text-xs text-slate-500">
@@ -115,7 +115,7 @@ function NotificationItem({ notification: n }: { notification: Notification }) {
           {info.text}
         </p>
         {n.comment && (
-          <p className={`mt-1 text-sm break-words ${n.comment.body === null ? 'text-slate-400' : ''}`}>
+          <p className={`mt-1 text-sm break-words ${n.comment.body === null ? 'text-slate-500' : ''}`}>
             {n.comment.body ?? 'このコメントは削除されました'}
           </p>
         )}

@@ -28,7 +28,7 @@ export function Menu({ items, label = 'メニュー' }: { items: MenuItem[]; lab
     <div className="relative" ref={ref} onClick={(e) => e.stopPropagation()}>
       <button
         type="button"
-        className="rounded-full p-1.5 text-slate-500 hover:bg-sky-50 hover:text-sky-600"
+        className="rounded-full p-1.5 text-slate-500 hover:bg-sky-50 hover:text-sky-700"
         onClick={() => setOpen((o) => !o)}
         aria-label={label}
         aria-expanded={open}

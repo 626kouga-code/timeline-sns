@@ -101,14 +101,14 @@ describe('フォロー', () => {
     })
     renderApp('/users/hanako')
 
-    await userEvent.click(await screen.findByRole('button', { name: '@hanako をフォロー' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'フォロー @hanako' }))
 
-    await screen.findByRole('button', { name: '@hanako のフォローを解除' })
+    await screen.findByRole('button', { name: 'フォロー中 @hanako' })
     expect(screen.getByRole('link', { name: '6 フォロワー' })).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith('/api/users/hanako/follow', expect.objectContaining({ method: 'PUT' }))
 
-    await userEvent.click(screen.getByRole('button', { name: '@hanako のフォローを解除' }))
-    await screen.findByRole('button', { name: '@hanako をフォロー' })
+    await userEvent.click(screen.getByRole('button', { name: 'フォロー中 @hanako' }))
+    await screen.findByRole('button', { name: 'フォロー @hanako' })
   })
 
   it('失敗したらメッセージを出す', async () => {
@@ -120,7 +120,7 @@ describe('フォロー', () => {
     })
     renderApp('/users/hanako')
 
-    await userEvent.click(await screen.findByRole('button', { name: '@hanako をフォロー' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'フォロー @hanako' }))
 
     await screen.findByText('このユーザーはフォローできません')
   })
@@ -132,7 +132,7 @@ describe('フォロー', () => {
     })
     renderApp('/users/hanako')
 
-    await userEvent.click(await screen.findByRole('button', { name: '@hanako をフォロー' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'フォロー @hanako' }))
 
     await screen.findByRole('heading', { name: 'ログイン' })
     expect(fetchMock.mock.calls.some(([path]) => String(path).endsWith('/follow'))).toBe(false)
@@ -152,9 +152,9 @@ describe('フォロー・フォロワー一覧', () => {
 
     await screen.findByText('JIRO')
     expect(screen.getByText('フォローされています')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '@jiro をフォロー' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'フォロー @jiro' })).toBeInTheDocument()
     // 自分自身にはフォローボタンを出さない
-    expect(screen.queryByRole('button', { name: '@taro をフォロー' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'フォロー @taro' })).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'フォロワー' }))
     await screen.findByText('まだフォロワーはいません')

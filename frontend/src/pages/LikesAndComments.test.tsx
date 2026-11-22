@@ -29,7 +29,7 @@ describe('いいね', () => {
     })
     renderApp('/home')
 
-    const button = await screen.findByRole('button', { name: 'いいね（0 件）' })
+    const button = await screen.findByRole('button', { name: '0 件のいいね', pressed: false })
     await userEvent.click(button)
 
     // 応答を待たずに反映（楽観的更新）
@@ -38,7 +38,7 @@ describe('いいね', () => {
 
     // 他の人のいいねも含んだサーバーの数で確定
     response.resolve(json(200, { liked: true, likeCount: 5 }))
-    await screen.findByRole('button', { name: 'いいねを取り消す（5 件）' })
+    await screen.findByRole('button', { name: '5 件のいいね', pressed: true })
   })
 
   it('失敗したら元に戻してメッセージを出す', async () => {
@@ -50,17 +50,17 @@ describe('いいね', () => {
     })
     renderApp('/home')
 
-    await userEvent.click(await screen.findByRole('button', { name: 'いいね（0 件）' }))
+    await userEvent.click(await screen.findByRole('button', { name: '0 件のいいね', pressed: false }))
 
     await screen.findByText('この投稿は存在しないか、表示できません')
-    expect(screen.getByRole('button', { name: 'いいね（0 件）' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: '0 件のいいね', pressed: false })).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('未ログインで押すとログイン画面へ移る', async () => {
     const fetchMock = mockApi({ '/api/timeline/global': () => page([post('p1', 'ゲストが見る投稿', hanako)]) })
     renderApp('/')
 
-    await userEvent.click(await screen.findByRole('button', { name: 'いいね（0 件）' }))
+    await userEvent.click(await screen.findByRole('button', { name: '0 件のいいね', pressed: false }))
 
     await screen.findByRole('heading', { name: 'ログイン' })
     expect(fetchMock.mock.calls.some(([path]) => String(path).includes('/likes'))).toBe(false)

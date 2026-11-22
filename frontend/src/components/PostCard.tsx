@@ -24,7 +24,8 @@ export function PostCard({ post }: { post: Post }) {
       className="flex cursor-pointer gap-3 border-b border-slate-100 px-4 py-3 hover:bg-slate-50/70"
       onClick={() => navigate(`/posts/${post.id}`)}
     >
-      <Link to={`/users/${author.handle}`} onClick={(e) => e.stopPropagation()}>
+      {/* 隣の名前と同じリンクなので、読み上げと Tab の移動では飛ばす */}
+      <Link to={`/users/${author.handle}`} onClick={(e) => e.stopPropagation()} aria-hidden="true" tabIndex={-1}>
         <Avatar user={author} />
       </Link>
       <div className="min-w-0 flex-1">
@@ -38,7 +39,7 @@ export function PostCard({ post }: { post: Post }) {
               {author.displayName}
             </Link>
             <span className="truncate text-slate-500">@{author.handle}</span>
-            <span className="text-slate-400">·</span>
+            <span className="text-slate-500">·</span>
             <time dateTime={post.createdAt} className="text-slate-500">
               {formatRelative(post.createdAt)}
             </time>

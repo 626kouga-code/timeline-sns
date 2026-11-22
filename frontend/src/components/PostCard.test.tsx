@@ -17,7 +17,7 @@ describe('PostCard', () => {
     expect(card).toHaveTextContent('こんにちは 2 行目')
     expect(within(card).getByText('たった今')).toHaveAttribute('dateTime', target.createdAt)
     expect(within(card).getByLabelText('コメント 4 件')).toBeInTheDocument()
-    expect(within(card).getByRole('button', { name: 'いいね（2 件）' })).toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: '2 件のいいね', pressed: false })).toBeInTheDocument()
   })
 
   it('本文が空なら本文の段落を出さず、画像を出す', () => {

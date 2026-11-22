@@ -17,11 +17,11 @@ describe('FollowButton', () => {
 
   it('フォローしていなければ「フォロー」、していれば「フォロー中」を出す', () => {
     const { unmount } = renderWithProviders(<FollowButton user={hanako} />, { me: user })
-    expect(screen.getByRole('button', { name: '@hanako をフォロー' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'フォロー @hanako' })).toHaveAttribute('aria-pressed', 'false')
     unmount()
 
     renderWithProviders(<FollowButton user={{ ...hanako, following: true }} />, { me: user })
-    const button = screen.getByRole('button', { name: '@hanako のフォローを解除' })
+    const button = screen.getByRole('button', { name: 'フォロー中 @hanako' })
     expect(button).toHaveAttribute('aria-pressed', 'true')
     expect(button).toHaveTextContent('フォロー中')
   })
@@ -32,7 +32,7 @@ describe('FollowButton', () => {
     queryClient.setQueryData(userKeys.profile('hanako', user.id), {})
     queryClient.setQueryData(timelineKeys.list('home', user.id), { pages: [], pageParams: [] })
 
-    await userEvent.click(screen.getByRole('button', { name: '@hanako をフォロー' }))
+    await userEvent.click(screen.getByRole('button', { name: 'フォロー @hanako' }))
 
     expect(request(fetchMock)).toMatchObject({ path: '/api/users/hanako/follow', method: 'PUT' })
     await expect.poll(() => queryClient.getQueryState(userKeys.profile('hanako', user.id))?.isInvalidated).toBe(true)
@@ -43,7 +43,7 @@ describe('FollowButton', () => {
     const fetchMock = mockApi({ '/api/users/hanako/follow': () => json(200, { following: false, followerCount: 0 }) })
     renderWithProviders(<FollowButton user={{ ...hanako, following: true }} />, { me: user })
 
-    await userEvent.click(screen.getByRole('button', { name: '@hanako のフォローを解除' }))
+    await userEvent.click(screen.getByRole('button', { name: 'フォロー中 @hanako' }))
 
     expect(request(fetchMock).method).toBe('DELETE')
   })
@@ -53,19 +53,19 @@ describe('FollowButton', () => {
     const fetchMock = mockApi({ '/api/users/hanako/follow': () => response.promise })
     renderWithProviders(<FollowButton user={hanako} />, { me: user })
 
-    await userEvent.click(screen.getByRole('button', { name: '@hanako をフォロー' }))
+    await userEvent.click(screen.getByRole('button', { name: 'フォロー @hanako' }))
 
-    expect(screen.getByRole('button', { name: '@hanako をフォロー' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'フォロー @hanako' })).toBeDisabled()
     expect(fetchMock).toHaveBeenCalledOnce()
     response.resolve(json(200, { following: true, followerCount: 1 }))
-    await expect.poll(() => screen.getByRole('button', { name: '@hanako をフォロー' })).toBeEnabled()
+    await expect.poll(() => screen.getByRole('button', { name: 'フォロー @hanako' })).toBeEnabled()
   })
 
   it('失敗したら理由をトーストで出す', async () => {
     mockApi({ '/api/users/hanako/follow': () => json(403, { code: 'BLOCKED', detail: 'このユーザーはフォローできません' }) })
     renderWithProviders(<FollowButton user={hanako} />, { me: user })
 
-    await userEvent.click(screen.getByRole('button', { name: '@hanako をフォロー' }))
+    await userEvent.click(screen.getByRole('button', { name: 'フォロー @hanako' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('このユーザーはフォローできません')
   })
@@ -74,7 +74,7 @@ describe('FollowButton', () => {
     const fetchMock = mockApi({})
     renderWithProviders(<FollowButton user={hanako} />, { path: '/users/hanako' })
 
-    await userEvent.click(screen.getByRole('button', { name: '@hanako をフォロー' }))
+    await userEvent.click(screen.getByRole('button', { name: 'フォロー @hanako' }))
 
     expect(fetchMock).not.toHaveBeenCalled()
     expect(screen.getByTestId('location')).toHaveTextContent('/login')
@@ -90,7 +90,7 @@ describe('FollowButton', () => {
       { me: user },
     )
 
-    await userEvent.click(screen.getByRole('button', { name: '@hanako をフォロー' }))
+    await userEvent.click(screen.getByRole('button', { name: 'フォロー @hanako' }))
 
     expect(onRowClick).not.toHaveBeenCalled()
   })

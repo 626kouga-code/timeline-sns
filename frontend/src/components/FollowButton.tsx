@@ -49,8 +49,8 @@ export function FollowButton({ user }: { user: FollowTarget }) {
         requireLogin(() => mutation.mutate(!following))
       }}
       disabled={mutation.isPending}
+      // 読み上げ名は見えている文字から始める（「フォロー @hanako」「フォロー中 @hanako」）。フォロー中かどうかは aria-pressed でも伝える
       aria-pressed={following}
-      aria-label={following ? `@${user.handle} のフォローを解除` : `@${user.handle} をフォロー`}
       className={
         following
           ? 'group shrink-0 rounded-full border border-slate-300 px-4 py-1.5 text-sm font-bold hover:border-red-300 hover:bg-red-50 hover:text-red-600 disabled:opacity-60'
@@ -59,12 +59,17 @@ export function FollowButton({ user }: { user: FollowTarget }) {
     >
       {following ? (
         <>
-          <span className="group-hover:hidden">フォロー中</span>
-          <span className="hidden group-hover:inline">解除</span>
+          {/* マウスを乗せている間は見た目だけ「解除」に替える。読み上げ名は「フォロー中」のまま */}
+          <span className="group-hover:sr-only">フォロー中</span>
+          {/* マウスを乗せたときだけの見た目の言い換えなので、読み上げ名には入れない */}
+          <span className="hidden group-hover:inline" aria-hidden="true">
+            解除
+          </span>
         </>
       ) : (
         'フォロー'
-      )}
+      )}{' '}
+      <span className="sr-only">@{user.handle}</span>
     </button>
   )
 }
