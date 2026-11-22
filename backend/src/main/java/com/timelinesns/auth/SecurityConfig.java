@@ -55,7 +55,8 @@ public class SecurityConfig {
      * ログインしていれば閲覧者に合わせた内容を返すので、API 仕様書では認証を任意として載せる。
      */
     static final List<String> GUEST_GET_PATHS = List.of(
-            "/api/timeline/global/**", "/api/posts/**", "/api/users/**", "/api/search/**", "/api/media/**");
+            "/api/timeline/global/**", "/api/posts/**", "/api/users/**", "/api/search/**", "/api/media/**",
+            "/api/ogp/**");
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
