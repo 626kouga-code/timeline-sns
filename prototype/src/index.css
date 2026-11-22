@@ -1,6 +1,0 @@
-@import "tailwindcss";
-
-body {
-  @apply bg-white text-slate-900 antialiased;
-  font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
-}
