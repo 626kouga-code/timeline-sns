@@ -33,7 +33,7 @@ export function LoadMore({ hasNextPage, isFetchingNextPage, fetchNextPage, endMe
           type="button"
           onClick={() => void fetchNextPage()}
           disabled={isFetchingNextPage}
-          className="text-sm text-slate-400 hover:text-sky-600"
+          className="text-sm text-slate-500 hover:text-sky-700"
         >
           {isFetchingNextPage ? '読み込み中…' : 'さらに読み込む'}
         </button>
@@ -41,5 +41,5 @@ export function LoadMore({ hasNextPage, isFetchingNextPage, fetchNextPage, endMe
     )
   }
   if (isEmpty || !endMessage) return null
-  return <p className="py-8 text-center text-sm text-slate-400">{endMessage}</p>
+  return <p className="py-8 text-center text-sm text-slate-500">{endMessage}</p>
 }

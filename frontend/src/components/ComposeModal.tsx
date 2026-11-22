@@ -96,7 +96,7 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
               placeholder="いまどうしてる？"
               aria-label="本文"
               rows={4}
-              className="w-full resize-none text-lg placeholder:text-slate-400 focus:outline-none"
+              className="w-full resize-none text-lg placeholder:text-slate-500 focus:outline-none"
             />
             {images.length > 0 && (
               <ul className="mt-2 grid grid-cols-2 gap-2" aria-label="添付する画像">
@@ -142,7 +142,7 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
               type="button"
               onClick={() => fileInput.current?.click()}
               disabled={images.length >= MAX_IMAGES || mutation.isPending}
-              className="rounded-full p-2 text-sky-600 hover:bg-sky-50 disabled:opacity-40"
+              className="rounded-full p-2 text-sky-700 hover:bg-sky-50 disabled:opacity-40"
               aria-label="画像を追加"
               title={`画像を追加（最大 ${MAX_IMAGES} 枚）`}
             >
@@ -151,7 +151,7 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
           </div>
           <div className="flex items-center gap-3">
             <span
-              className={`text-sm tabular-nums ${over ? 'font-bold text-red-600' : length > MAX_BODY - 20 ? 'text-amber-600' : 'text-slate-400'}`}
+              className={`text-sm tabular-nums ${over ? 'font-bold text-red-600' : length > MAX_BODY - 20 ? 'text-amber-700' : 'text-slate-500'}`}
               aria-label="残り文字数"
             >
               {MAX_BODY - length}
@@ -159,7 +159,7 @@ export function ComposeModal({ onClose }: { onClose: () => void }) {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="rounded-full bg-sky-500 px-5 py-2 font-bold text-white hover:bg-sky-600 disabled:opacity-40"
+              className="rounded-full bg-sky-700 px-5 py-2 font-bold text-white hover:bg-sky-800 disabled:opacity-40"
             >
               {mutation.isPending ? '投稿中…' : '投稿する'}
             </button>

@@ -66,7 +66,7 @@ export function TimelinePage({ mode }: { mode: TimelineMode }) {
             <button
               type="button"
               onClick={showNewPosts}
-              className="rounded-full bg-sky-500 px-4 py-1.5 text-sm font-bold text-white shadow hover:bg-sky-600"
+              className="rounded-full bg-sky-700 px-4 py-1.5 text-sm font-bold text-white shadow hover:bg-sky-800"
             >
               新しい投稿があります（{newPosts >= 100 ? '99+' : newPosts} 件）
             </button>
@@ -79,7 +79,7 @@ export function TimelinePage({ mode }: { mode: TimelineMode }) {
           <p className="font-bold">いま起きていることを見つけよう</p>
           <p className="mt-1 text-sm text-slate-600">登録すると投稿・いいね・フォローができます。</p>
           <div className="mt-3 flex gap-2">
-            <Link to="/signup" className="rounded-full bg-sky-500 px-4 py-2 text-sm font-bold text-white hover:bg-sky-600">
+            <Link to="/signup" className="rounded-full bg-sky-700 px-4 py-2 text-sm font-bold text-white hover:bg-sky-800">
               新規登録
             </Link>
             <Link to="/login" className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-bold hover:bg-slate-50">
@@ -96,12 +96,12 @@ export function TimelinePage({ mode }: { mode: TimelineMode }) {
           className="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left hover:bg-slate-50/70"
         >
           <Avatar user={me} />
-          <span className="flex-1 text-lg text-slate-400">いまどうしてる？</span>
-          <span className="rounded-full bg-sky-500 px-4 py-1.5 text-sm font-bold text-white">投稿する</span>
+          <span className="flex-1 text-lg text-slate-500">いまどうしてる？</span>
+          <span className="rounded-full bg-sky-700 px-4 py-1.5 text-sm font-bold text-white">投稿する</span>
         </button>
       )}
 
-      {timeline.isPending && <p className="py-10 text-center text-sm text-slate-400">読み込み中…</p>}
+      {timeline.isPending && <p className="py-10 text-center text-sm text-slate-500">読み込み中…</p>}
 
       {timeline.isError && posts.length === 0 && (
         <div className="px-8 py-16 text-center">
@@ -127,7 +127,7 @@ export function TimelinePage({ mode }: { mode: TimelineMode }) {
           <p className="text-lg font-bold">まだ投稿がありません</p>
           {mode === 'home' && (
             <p className="mt-2 text-sm text-slate-500">
-              <Link to="/" className="text-sky-600 hover:underline">
+              <Link to="/" className="text-sky-700 hover:underline">
                 全体タイムライン
               </Link>
               からユーザーを探してフォローしてみましょう。

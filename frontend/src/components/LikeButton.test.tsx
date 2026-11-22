@@ -24,7 +24,7 @@ describe('LikeButton', () => {
   it('いいねの数と状態を表示する', async () => {
     setup({ ...post('p1', '本文'), likeCount: 3, liked: true })
 
-    expect(await screen.findByRole('button', { name: 'いいねを取り消す（3 件）' })).toHaveAttribute(
+    expect(await screen.findByRole('button', { name: '3 件のいいね', pressed: true })).toHaveAttribute(
       'aria-pressed',
       'true',
     )
@@ -35,25 +35,25 @@ describe('LikeButton', () => {
     const fetchMock = mockApi({ '/api/posts/p1/likes': () => response.promise })
     setup(post('p1', '本文'))
 
-    await userEvent.click(await screen.findByRole('button', { name: 'いいね（0 件）' }))
+    await userEvent.click(await screen.findByRole('button', { name: '0 件のいいね', pressed: false }))
 
     // 応答を待たずに変わる
-    expect(button()).toHaveAccessibleName('いいねを取り消す（1 件）')
+    expect(button()).toHaveAccessibleName('1 件のいいね')
     expect(request(fetchMock)).toMatchObject({ path: '/api/posts/p1/likes', method: 'POST' })
 
     // 他の人のいいねも反映された数になる
     response.resolve(json(200, { liked: true, likeCount: 5 }))
-    await screen.findByRole('button', { name: 'いいねを取り消す（5 件）' })
+    await screen.findByRole('button', { name: '5 件のいいね', pressed: true })
   })
 
   it('いいね済みなら取り消しを送る', async () => {
     const fetchMock = mockApi({ '/api/posts/p1/likes': () => json(200, { liked: false, likeCount: 0 }) })
     setup({ ...post('p1', '本文'), likeCount: 1, liked: true })
 
-    await userEvent.click(await screen.findByRole('button', { name: 'いいねを取り消す（1 件）' }))
+    await userEvent.click(await screen.findByRole('button', { name: '1 件のいいね', pressed: true }))
 
     expect(request(fetchMock).method).toBe('DELETE')
-    await screen.findByRole('button', { name: 'いいね（0 件）' })
+    await screen.findByRole('button', { name: '0 件のいいね', pressed: false })
   })
 
   it('失敗したら元の表示に戻し、理由をトーストで出す', async () => {
@@ -62,10 +62,11 @@ describe('LikeButton', () => {
     })
     setup(post('p1', '本文'))
 
-    await userEvent.click(await screen.findByRole('button', { name: 'いいね（0 件）' }))
+    await userEvent.click(await screen.findByRole('button', { name: '0 件のいいね', pressed: false }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('この投稿は存在しないか、表示できません')
-    expect(button()).toHaveAccessibleName('いいね（0 件）')
+    expect(button()).toHaveAccessibleName('0 件のいいね')
+    expect(button()).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('送信中に連打されても 1 回しか送らない', async () => {
@@ -73,7 +74,7 @@ describe('LikeButton', () => {
     const fetchMock = mockApi({ '/api/posts/p1/likes': () => response.promise })
     setup(post('p1', '本文'))
 
-    await userEvent.click(await screen.findByRole('button', { name: 'いいね（0 件）' }))
+    await userEvent.click(await screen.findByRole('button', { name: '0 件のいいね', pressed: false }))
     await userEvent.click(button())
     await userEvent.click(button())
 
@@ -85,7 +86,7 @@ describe('LikeButton', () => {
     const fetchMock = mockApi({})
     setup(post('p1', '本文'), null)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'いいね（0 件）' }))
+    await userEvent.click(await screen.findByRole('button', { name: '0 件のいいね', pressed: false }))
 
     expect(fetchMock).not.toHaveBeenCalled()
     expect(screen.getByTestId('location')).toHaveTextContent('/login')

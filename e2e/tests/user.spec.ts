@@ -27,18 +27,18 @@ test('プロフィールを開き、フォロー・解除できる。一覧に�
   const followed = page.waitForResponse(
     (res) => res.request().method() === 'PUT' && res.url().endsWith(`/api/users/${target.handle}/follow`),
   )
-  await page.getByRole('button', { name: `@${target.handle} をフォロー` }).click()
-  await expect(page.getByRole('button', { name: `@${target.handle} のフォローを解除` })).toBeVisible()
+  await page.getByRole('button', { name: `フォロー @${target.handle}` }).click()
+  await expect(page.getByRole('button', { name: `フォロー中 @${target.handle}` })).toBeVisible()
   expect((await followed).ok()).toBeTruthy()
 
   // フォロワー一覧に自分が出る
   await page.getByRole('link', { name: /フォロワー/ }).click()
   await expect(page).toHaveURL(new RegExp(`/users/${target.handle}/followers$`))
-  await expect(page.getByRole('main').getByText(`@${me.handle}`)).toBeVisible()
+  await expect(page.getByRole('main').getByRole('paragraph').filter({ hasText: `@${me.handle}` })).toBeVisible()
 
   // 自分のフォロー中一覧に相手が出る
   await page.goto(`/users/${me.handle}/following`)
-  await expect(page.getByRole('main').getByText(`@${target.handle}`)).toBeVisible()
+  await expect(page.getByRole('main').getByRole('paragraph').filter({ hasText: `@${target.handle}` })).toBeVisible()
 
   // 解除すると、相手のフォロワー一覧から消える
   await page.goto(`/users/${target.handle}`)
@@ -46,11 +46,11 @@ test('プロフィールを開き、フォロー・解除できる。一覧に�
   const unfollowed = page.waitForResponse(
     (res) => res.request().method() === 'DELETE' && res.url().endsWith(`/api/users/${target.handle}/follow`),
   )
-  await page.getByRole('button', { name: `@${target.handle} のフォローを解除` }).click()
-  await expect(page.getByRole('button', { name: `@${target.handle} をフォロー` })).toBeVisible()
+  await page.getByRole('button', { name: `フォロー中 @${target.handle}` }).click()
+  await expect(page.getByRole('button', { name: `フォロー @${target.handle}` })).toBeVisible()
   expect((await unfollowed).ok()).toBeTruthy()
   await page.goto(`/users/${target.handle}/followers`)
-  await expect(page.getByRole('main').getByText(`@${me.handle}`)).toHaveCount(0)
+  await expect(page.getByRole('main').getByRole('paragraph').filter({ hasText: `@${me.handle}` })).toHaveCount(0)
 })
 
 test('表示名・自己紹介・アイコン画像を変更できる（F-41）', async ({ page, newUser, loginAs }) => {
@@ -83,10 +83,10 @@ test('ユーザー ID や表示名の一部で検索できる（F-44）', async 
   await page.goto('/search')
 
   await page.getByLabel('ユーザーID・表示名で検索').fill(target.handle)
-  await expect(page.getByRole('main').getByText(`@${target.handle}`)).toBeVisible()
+  await expect(page.getByRole('main').getByRole('paragraph').filter({ hasText: `@${target.handle}` })).toBeVisible()
 
   await page.getByLabel('ユーザーID・表示名で検索').fill('けんさく')
-  await expect(page.getByRole('main').getByText(`@${target.handle}`)).toBeVisible()
-  await page.getByRole('main').getByText(`@${target.handle}`).click()
+  await expect(page.getByRole('main').getByRole('paragraph').filter({ hasText: `@${target.handle}` })).toBeVisible()
+  await page.getByRole('main').getByRole('paragraph').filter({ hasText: `@${target.handle}` }).click()
   await expect(page).toHaveURL(new RegExp(`/users/${target.handle}$`))
 })

@@ -21,7 +21,19 @@ interface NavItem {
 export const UNREAD_INTERVAL = 30_000
 
 const badgeText = (count: number) => (count >= 100 ? '99+' : String(count))
-const navLabel = (item: NavItem) => (item.badge ? `${item.label}（未読 ${badgeText(item.badge)} 件）` : item.label)
+/**
+ * 未読数のバッジ。読み上げでは「3 件の未読」と読む。
+ * ナビの読み上げ名は中身から「通知 3 件の未読」と作る。見えている文字（「通知」「3」）を同じ順で名前に含めないと、
+ * 音声入力で「通知」と言っても押せない（axe の label-content-name-mismatch）ので、aria-label で上書きしない
+ */
+function Badge({ count, className }: { count: number; className: string }) {
+  return (
+    <span className={`absolute rounded-full bg-sky-700 px-1 text-center font-bold text-white ${className}`}>
+      {badgeText(count)}{' '}
+      <span className="sr-only">件の未読</span>
+    </span>
+  )
+}
 
 export function Layout() {
   const { me, logout } = useAuth()
@@ -72,8 +84,8 @@ export function Layout() {
       {/* 左ナビ（PC・タブレット） */}
       <header className="sticky top-0 hidden h-screen w-20 shrink-0 flex-col justify-between px-2 py-4 sm:flex xl:w-64">
         <div>
-          <NavLink to={me ? '/home' : '/'} className="mb-4 flex items-center gap-2 px-3 text-xl font-black text-sky-600">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-sky-500 text-white">t</span>
+          <NavLink to={me ? '/home' : '/'} className="mb-4 flex items-center gap-2 px-3 text-xl font-black text-sky-700">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-sky-700 text-white">t</span>
             <span className="hidden xl:inline">timeline</span>
           </NavLink>
           <nav className="space-y-1">
@@ -83,18 +95,13 @@ export function Layout() {
                 to={item.to}
                 end={item.end}
                 className={navClass}
-                // 幅が xl 未満ではアイコンだけになるので、読み上げ用の名前を常に付ける
-                aria-label={navLabel(item)}
               >
+                {/* 幅が xl 未満ではアイコンだけを見せ、名前は読み上げ用に残す。読み上げでは名前→未読数の順にするため、先に置いて見た目だけ後ろに回す */}
+                <span className="sr-only xl:not-sr-only xl:order-last">{item.label}</span>{' '}
                 <span className="relative">
                   <Icon name={item.icon} className="size-7" />
-                  {!!item.badge && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-5 rounded-full bg-sky-500 px-1 text-center text-xs font-bold text-white">
-                      {badgeText(item.badge)}
-                    </span>
-                  )}
+                  {!!item.badge && <Badge count={item.badge} className="-top-1.5 -right-1.5 min-w-5 text-xs" />}
                 </span>
-                <span className="hidden xl:inline">{item.label}</span>
               </NavLink>
             ))}
           </nav>
@@ -102,7 +109,7 @@ export function Layout() {
             <button
               type="button"
               onClick={() => setComposeOpen(true)}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-sky-500 py-3 font-bold text-white shadow hover:bg-sky-600"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-sky-700 py-3 font-bold text-white shadow hover:bg-sky-800"
               aria-label="投稿する"
             >
               <Icon name="pen" className="size-6 xl:hidden" />
@@ -142,14 +149,10 @@ export function Layout() {
             to={item.to}
             end={item.end}
             className={({ isActive }) => `relative p-3 ${isActive ? 'text-slate-900' : 'text-slate-500'}`}
-            aria-label={navLabel(item)}
           >
+            <span className="sr-only">{item.label}</span>{' '}
             <Icon name={item.icon} className="size-6" />
-            {!!item.badge && (
-              <span className="absolute top-1 right-1 min-w-4 rounded-full bg-sky-500 px-1 text-center text-[10px] font-bold text-white">
-                {badgeText(item.badge)}
-              </span>
-            )}
+            {!!item.badge && <Badge count={item.badge} className="top-1 right-1 min-w-4 text-[10px]" />}
           </NavLink>
         ))}
         {me && (
@@ -162,7 +165,7 @@ export function Layout() {
         <button
           type="button"
           onClick={() => setComposeOpen(true)}
-          className="fixed right-4 bottom-20 z-40 rounded-full bg-sky-500 p-4 text-white shadow-lg sm:hidden"
+          className="fixed right-4 bottom-20 z-40 rounded-full bg-sky-700 p-4 text-white shadow-lg sm:hidden"
           aria-label="投稿する"
         >
           <Icon name="pen" className="size-6" />

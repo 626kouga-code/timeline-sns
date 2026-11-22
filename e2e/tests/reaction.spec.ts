@@ -14,14 +14,14 @@ test('いいねすると件数が増え、取り消すと戻る（F-30）', asyn
   const liked = page.waitForResponse(
     (res) => res.request().method() === 'POST' && res.url().endsWith(`/api/posts/${post.id}/likes`),
   )
-  await card.getByRole('button', { name: 'いいね（0 件）' }).click()
-  await expect(card.getByRole('button', { name: 'いいねを取り消す（1 件）' })).toBeVisible()
+  await card.getByRole('button', { name: '0 件のいいね', pressed: false }).click()
+  await expect(card.getByRole('button', { name: '1 件のいいね', pressed: true })).toBeVisible()
   expect((await liked).ok()).toBeTruthy()
 
   // 再読み込みしても保存されている
   await page.reload()
-  await card.getByRole('button', { name: 'いいねを取り消す（1 件）' }).click()
-  await expect(card.getByRole('button', { name: 'いいね（0 件）' })).toBeVisible()
+  await card.getByRole('button', { name: '1 件のいいね', pressed: true }).click()
+  await expect(card.getByRole('button', { name: '0 件のいいね', pressed: false })).toBeVisible()
 })
 
 test('投稿詳細でコメントし、そのコメントに返信できる（F-31 / F-32）', async ({ page, api, newUser, loginAs }) => {

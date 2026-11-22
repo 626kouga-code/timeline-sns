@@ -22,7 +22,7 @@ export function CommentThread({ postId }: { postId: string }) {
     queryFn: () => fetchComments(postId),
   })
 
-  if (query.isPending) return <p className="py-8 text-center text-sm text-slate-400">コメントを読み込み中…</p>
+  if (query.isPending) return <p className="py-8 text-center text-sm text-slate-500">コメントを読み込み中…</p>
   if (query.isError) {
     return (
       <p role="alert" className="px-4 py-8 text-center text-sm text-slate-500">
@@ -118,7 +118,8 @@ function CommentItem({ comment, postId, replyTo }: CommentItemProps) {
 
   return (
     <div className="flex gap-3 px-4 py-3">
-      <Link to={`/users/${author.handle}`}>
+      {/* 隣の名前と同じリンクなので、読み上げと Tab の移動では飛ばす */}
+      <Link to={`/users/${author.handle}`} aria-hidden="true" tabIndex={-1}>
         <Avatar user={author} size="sm" />
       </Link>
       <div className="min-w-0 flex-1">
@@ -128,7 +129,7 @@ function CommentItem({ comment, postId, replyTo }: CommentItemProps) {
               {author.displayName}
             </Link>
             <span className="text-slate-500">@{author.handle}</span>
-            <span className="text-slate-400">·</span>
+            <span className="text-slate-500">·</span>
             <time dateTime={comment.createdAt} className="text-slate-500">
               {formatRelative(comment.createdAt)}
             </time>
@@ -139,7 +140,7 @@ function CommentItem({ comment, postId, replyTo }: CommentItemProps) {
           <p className="text-xs text-slate-500">
             {replyTo?.author ? (
               <>
-                <Link to={`/users/${replyTo.author.handle}`} className="text-sky-600 hover:underline">
+                <Link to={`/users/${replyTo.author.handle}`} className="text-sky-700 hover:underline">
                   @{replyTo.author.handle}
                 </Link>{' '}
                 への返信
@@ -153,7 +154,7 @@ function CommentItem({ comment, postId, replyTo }: CommentItemProps) {
         <button
           type="button"
           onClick={() => requireLogin(() => setReplying((r) => !r))}
-          className="mt-1 text-sm font-semibold text-slate-500 hover:text-sky-600"
+          className="mt-1 text-sm font-semibold text-slate-500 hover:text-sky-700"
         >
           返信
         </button>
@@ -230,13 +231,13 @@ export function CommentForm({ postId, parentId, placeholder, onDone, autoFocus }
           </p>
         )}
         <div className="mt-1 flex items-center justify-end gap-3">
-          <span className={`text-xs tabular-nums ${length > MAX_BODY ? 'font-bold text-red-600' : 'text-slate-400'}`}>
+          <span className={`text-xs tabular-nums ${length > MAX_BODY ? 'font-bold text-red-600' : 'text-slate-500'}`}>
             {length}/{MAX_BODY}
           </span>
           <button
             type="submit"
             disabled={!valid}
-            className="rounded-full bg-sky-500 px-4 py-1.5 text-sm font-bold text-white hover:bg-sky-600 disabled:opacity-40"
+            className="rounded-full bg-sky-700 px-4 py-1.5 text-sm font-bold text-white hover:bg-sky-800 disabled:opacity-40"
           >
             {parentId ? '返信' : 'コメント'}
           </button>

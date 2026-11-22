@@ -53,11 +53,12 @@ export function LikeButton({ post, size = 'sm' }: { post: Post; size?: 'sm' | 'l
         requireLogin(() => mutation.mutate(!post.liked))
       }}
       className={`flex items-center gap-1.5 hover:text-pink-600 ${post.liked ? 'text-pink-600' : ''}`}
+      // 読み上げ名は見えている件数から始める（「3 件のいいね」）。押したかどうかは aria-pressed で伝える
       aria-pressed={post.liked}
-      aria-label={`${post.liked ? 'いいねを取り消す' : 'いいね'}（${post.likeCount} 件）`}
     >
       <Icon name="heart" filled={post.liked} className={iconSize} />
-      {post.likeCount}
+      {post.likeCount}{' '}
+      <span className="sr-only">件のいいね</span>
     </button>
   )
 }

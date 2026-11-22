@@ -111,7 +111,7 @@ describe('未読バッジ', () => {
     })
     renderApp('/home')
 
-    expect((await screen.findAllByRole('link', { name: '通知（未読 3 件）' })).length).toBeGreaterThan(0)
+    expect((await screen.findAllByRole('link', { name: '通知 3 件の未読' })).length).toBeGreaterThan(0)
   })
 
   // サーバーは 100 件で数えるのをやめる
@@ -122,7 +122,7 @@ describe('未読バッジ', () => {
     })
     renderApp('/home')
 
-    expect((await screen.findAllByRole('link', { name: '通知（未読 99+ 件）' })).length).toBeGreaterThan(0)
+    expect((await screen.findAllByRole('link', { name: '通知 99+ 件の未読' })).length).toBeGreaterThan(0)
     expect(screen.getAllByText('99+').length).toBeGreaterThan(0)
   })
 

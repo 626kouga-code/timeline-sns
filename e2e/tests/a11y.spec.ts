@@ -21,7 +21,7 @@ test.describe('アクセシビリティ @a11y', () => {
 
     await page.goto('/search')
     await page.getByLabel('ユーザーID・表示名で検索').fill(author.handle)
-    await expect(page.getByRole('main').getByText(`@${author.handle}`)).toBeVisible()
+    await expect(page.getByRole('main').getByRole('paragraph').filter({ hasText: `@${author.handle}` })).toBeVisible()
     await expectAccessible(page, testInfo, '検索結果')
   })
 

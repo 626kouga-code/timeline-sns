@@ -19,7 +19,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {toast && (
         <div
           role="status"
-          className="fixed bottom-24 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg sm:bottom-8"
+          className="fixed bottom-24 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg sm:bottom-8"
         >
           {toast}
         </div>

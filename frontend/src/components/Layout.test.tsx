@@ -39,7 +39,7 @@ describe('Layout', () => {
     renderLayout(null)
 
     const links = within(sideNav()).getAllByRole('link')
-    expect(links.map((link) => link.getAttribute('aria-label'))).toEqual(['全体', '検索', 'ログイン'])
+    expect(links.map((link) => link.textContent?.trim())).toEqual(['全体', '検索', 'ログイン'])
     expect(screen.queryByRole('button', { name: '投稿する' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'ログアウト' })).not.toBeInTheDocument()
   })
@@ -49,7 +49,7 @@ describe('Layout', () => {
     renderLayout(user)
 
     const nav = sideNav()
-    expect(within(nav).getAllByRole('link').map((link) => link.getAttribute('aria-label'))).toEqual([
+    expect(within(nav).getAllByRole('link').map((link) => link.textContent?.trim())).toEqual([
       'ホーム',
       '全体',
       '検索',
@@ -71,12 +71,12 @@ describe('Layout', () => {
   it('未読の通知数をバッジで出し、100 件以上は 99+ にする', async () => {
     mockApi({ '/api/notifications/unread-count': () => json(200, { count: 3 }) })
     const { unmount } = renderLayout(user)
-    expect(await within(sideNav()).findByRole('link', { name: '通知（未読 3 件）' })).toHaveTextContent('3')
+    expect(await within(sideNav()).findByRole('link', { name: '通知 3 件の未読' })).toHaveTextContent('3')
     unmount()
 
     mockApi({ '/api/notifications/unread-count': () => json(200, { count: 100 }) })
     renderLayout(user)
-    expect(await within(sideNav()).findByRole('link', { name: '通知（未読 99+ 件）' })).toHaveTextContent('99+')
+    expect(await within(sideNav()).findByRole('link', { name: '通知 99+ 件の未読' })).toHaveTextContent('99+')
   })
 
   it('未読数は 30 秒ごとに確認し、未ログインなら確認しない', async () => {
@@ -84,11 +84,11 @@ describe('Layout', () => {
     let count = 0
     const fetchMock = mockApi({ '/api/notifications/unread-count': () => json(200, { count: ++count }) })
     renderLayout(user)
-    expect(await within(sideNav()).findByRole('link', { name: '通知（未読 1 件）' })).toBeInTheDocument()
+    expect(await within(sideNav()).findByRole('link', { name: '通知 1 件の未読' })).toBeInTheDocument()
 
     await act(() => vi.advanceTimersByTimeAsync(UNREAD_INTERVAL))
 
-    expect(await within(sideNav()).findByRole('link', { name: '通知（未読 2 件）' })).toBeInTheDocument()
+    expect(await within(sideNav()).findByRole('link', { name: '通知 2 件の未読' })).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 

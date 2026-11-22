@@ -135,7 +135,7 @@ export function ProfileEditPage() {
         <label className="block">
           <span className="flex justify-between text-sm font-semibold">
             表示名
-            <span className={`font-normal tabular-nums ${nameLength > MAX_NAME ? 'text-red-600' : 'text-slate-400'}`}>
+            <span className={`font-normal tabular-nums ${nameLength > MAX_NAME ? 'text-red-600' : 'text-slate-500'}`}>
               {nameLength}/{MAX_NAME}
             </span>
           </span>
@@ -151,7 +151,7 @@ export function ProfileEditPage() {
         <label className="block">
           <span className="flex justify-between text-sm font-semibold">
             自己紹介
-            <span className={`font-normal tabular-nums ${bioLength > MAX_BIO ? 'text-red-600' : 'text-slate-400'}`}>
+            <span className={`font-normal tabular-nums ${bioLength > MAX_BIO ? 'text-red-600' : 'text-slate-500'}`}>
               {bioLength}/{MAX_BIO}
             </span>
           </span>

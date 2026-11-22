@@ -77,9 +77,9 @@ describe('ユーザー検索', () => {
     })
     renderApp('/search?q=hanako')
 
-    await userEvent.click(await screen.findByRole('button', { name: '@hanako をフォロー' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'フォロー @hanako' }))
 
-    await screen.findByRole('button', { name: '@hanako のフォローを解除' })
+    await screen.findByRole('button', { name: 'フォロー中 @hanako' })
     expect(fetchMock).toHaveBeenCalledWith('/api/users/hanako/follow', expect.objectContaining({ method: 'PUT' }))
   })
 })

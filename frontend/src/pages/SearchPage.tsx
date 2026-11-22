@@ -58,7 +58,7 @@ export function SearchPage() {
       {!query ? (
         <p className="px-4 py-16 text-center text-slate-500">ユーザーID（@handle）や表示名の一部を入力してください</p>
       ) : results.isPending ? (
-        <p className="py-10 text-center text-sm text-slate-400">検索中…</p>
+        <p className="py-10 text-center text-sm text-slate-500">検索中…</p>
       ) : results.isError && users.length === 0 ? (
         <div className="px-8 py-16 text-center">
           <p role="alert" className="text-slate-600">

@@ -20,9 +20,10 @@ describe('UserListItem', () => {
     renderWithProviders(<UserListItem user={hanako} />, { me: user })
 
     expect(screen.getByText('花子')).toBeInTheDocument()
-    expect(screen.getByText(/@hanako/)).toBeInTheDocument()
+    // フォローボタンの読み上げ用の「@hanako」（sr-only）は除いて、見えているユーザーIDを探す
+    expect(screen.getByText(/@hanako/, { ignore: '.sr-only' })).toBeInTheDocument()
     expect(screen.getByText(/よろしく/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '@hanako をフォロー' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'フォロー @hanako' })).toBeInTheDocument()
   })
 
   it('相手にフォローされていれば、その旨を出す', () => {

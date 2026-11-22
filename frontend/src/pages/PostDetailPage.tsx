@@ -26,7 +26,7 @@ export function PostDetailPage() {
     return (
       <>
         <PageHeader title="投稿" back />
-        <p className="py-10 text-center text-sm text-slate-400">読み込み中…</p>
+        <p className="py-10 text-center text-sm text-slate-500">読み込み中…</p>
       </>
     )
   }
@@ -54,7 +54,8 @@ export function PostDetailPage() {
       <PageHeader title="投稿" back />
       <article className="border-b border-slate-100 px-4 pt-3">
         <div className="flex items-center gap-3">
-          <Link to={`/users/${author.handle}`}>
+          {/* 隣の名前と同じリンクなので、読み上げと Tab の移動では飛ばす */}
+          <Link to={`/users/${author.handle}`} aria-hidden="true" tabIndex={-1}>
             <Avatar user={author} />
           </Link>
           <div className="min-w-0 flex-1">
@@ -88,7 +89,7 @@ export function PostDetailPage() {
         </div>
       ) : (
         <p className="border-b border-slate-100 px-4 py-3 text-sm text-slate-500">
-          <Link to="/login" state={{ from: `/posts/${post.id}` }} className="font-semibold text-sky-600 hover:underline">
+          <Link to="/login" state={{ from: `/posts/${post.id}` }} className="font-semibold text-sky-700 hover:underline">
             ログイン
           </Link>
           するとコメントできます
