@@ -20,4 +20,4 @@ X のようなタイムライン型の SNS を Web アプリとして開発す�
 | [09_ci-cd.md](09_ci-cd.md) | CI/CD |
 | [10_operations.md](10_operations.md) | ログ・監視・エラー通知、バックアップ |
 | [11_open-issues.md](11_open-issues.md) | 未決事項 |
-| [12_aws-architecture.md](12_aws-architecture.md) | AWS 構成（CloudFront・S3・ECS Fargate・RDS）、起動と停止、費用、構築とデプロイ |
+| [12_aws-architecture.md](12_aws-architecture.md) | AWS 構成（CloudFront・S3・ECS Fargate・RDS）、作成と削除、費用、構築とデプロイ |
