@@ -50,10 +50,13 @@ export function post(
 
 type Handler = (path: string, init?: RequestInit) => Response | Promise<Response>
 
-// 指定がなければタイムラインとコメント欄は空、未読の通知は 0 件にする
+// 指定がなければタイムライン・コメント欄・通知一覧は空、未読の通知は 0 件にする。
+// 画面が使う API を指定し忘れると 401 になり、ログイン状態の更新も失敗してログアウトしてしまう。
+// その流れは非同期に進むので、手元では通っても CI の遅いマシンでだけ失敗する（#95）
 const defaults: Record<string, Handler> = {
   '/api/timeline/global': () => page([]),
   '/api/timeline/home': () => page([]),
+  '/api/notifications': () => page([]),
   '/api/notifications/unread-count': () => json(200, { count: 0 }),
 }
 
