@@ -14,7 +14,7 @@
 | | 主なライブラリ | — | Spring Security（JWT。Google ログイン用の OAuth2 Client は Could）、Spring Data JPA、Flyway、Bean Validation、AWS SDK for Java v2（S3。SES はメール送信を作るときに使う）、springdoc-openapi（API 仕様書の自動生成と Swagger UI。ローカルとテストだけで有効） |
 | データベース | PostgreSQL | 18.x | |
 | フロントエンド | React | 19.x | |
-| | TypeScript | 7.0.x | 導入時に ESLint などの対応状況を確認し、問題があれば 5.x/6.x 系に下げる |
+| | TypeScript | 6.0.x | 7.0 は typescript-eslint が未対応（6.1 未満まで）のため 6.0 に固定。Dependabot も 6.1 以上には上げない |
 | | Vite | 8.x | |
 | | Tailwind CSS | 4.x | |
 | | TanStack Query | 5.x | サーバーデータの取得とキャッシュ |
@@ -37,7 +37,7 @@ SNSアプリ/
 ├── e2e/                 # Playwright の E2E テスト
 ├── perf/                # k6 の負荷テスト
 ├── docs/                # 要件定義書などの設計資料
-├── docker-compose.yml   # ローカル用の PostgreSQL・S3Mock・Mailpit
+├── docker-compose.yml   # ローカル用の PostgreSQL・S3Mock・Mailpit（本番用イメージの確認用のバックエンドも）
 └── .github/workflows/   # CI/CD
 ```
 

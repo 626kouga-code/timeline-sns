@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.S3ClientBuilder;
 
 /**
  * S3 クライアント。{@code app.storage.endpoint} があれば S3 互換ストレージ（S3Mock）につなぐ。
- * 本番（endpoint なし）は AWS SDK の既定の認証情報（EC2 のインスタンスロールなど）を使う。
+ * 本番（endpoint なし）は AWS SDK の既定の認証情報（ECS のタスクロール）を使う。
  */
 @Configuration
 public class S3Config {
