@@ -61,7 +61,7 @@ jobs:
 
       - uses: grafana/setup-k6-action@v1
         with:
-          k6-version: "2.3.0"
+          k6-version: "2.4.0"
 
       - name: k6 を実行（${{ inputs.scenario }}）
         env:
