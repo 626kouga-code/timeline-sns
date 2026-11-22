@@ -1,0 +1,46 @@
+# AWS の環境（infra/terraform/app）を全部消す（docs/12「作成と削除」）。
+# Actions タブの「aws-down」→「Run workflow」で、main を選び、確認の欄に destroy と入れて実行する。10〜20 分かかる。
+# DB の中身と投稿画像も消える。残すもの（ECR・SNS・Budgets・この OIDC の設定）は消えない。
+name: aws-down
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "全部消してよければ destroy と入力"
+        required: true
+
+concurrency:
+  group: aws
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  destroy:
+    if: inputs.confirm == 'destroy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::579225707926:role/timeline-sns-github-deploy
+          aws-region: ap-northeast-1
+          role-duration-seconds: 7200
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.16.2
+          terraform_wrapper: false
+
+      # 消すときはイメージのタグを使わないので、何を渡してもよい
+      - name: 全部消す（terraform destroy）
+        working-directory: infra/terraform/app
+        run: |
+          terraform init -input=false
+          terraform destroy -input=false -auto-approve -var image_tag=unused
+          echo "## 環境を全部消しました" >> "$GITHUB_STEP_SUMMARY"

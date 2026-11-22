@@ -1,10 +1,12 @@
 # AWS 環境（Terraform）
 
-AWS の構成と考え方は [docs/12_aws-architecture.md](../docs/12_aws-architecture.md)。ここは、手元のコマンドで作る・デプロイする・消す手順をまとめる（#93 で GitHub Actions のワークフローにする）。
+AWS の構成と考え方は [docs/12_aws-architecture.md](../docs/12_aws-architecture.md)。ここは、手元のコマンドで作る・デプロイする・消す手順をまとめる。
+
+**普段は GitHub Actions のボタンで行う**：Actions タブで [aws-up](../.github/workflows/aws-up.yml)（作る＋デプロイ、20〜30 分）／[aws-down](../.github/workflows/aws-down.yml)（全部消す。確認の欄に `destroy`）を選び、main で「Run workflow」。中身は下の手順と同じ。GitHub からは OIDC で、persistent のデプロイ用ロール（main ブランチからだけ使える）を引き受ける。
 
 | フォルダ | 中身 | 消すか |
 | --- | --- | --- |
-| [terraform/persistent](terraform/persistent) | ECR（イメージの置き場）、アラームの通知先（SNS）、予算アラート（Budgets） | 消さない（費用はほぼ $0） |
+| [terraform/persistent](terraform/persistent) | ECR（イメージの置き場）、アラームの通知先（SNS）、予算アラート（Budgets）、GitHub Actions 用の OIDC とデプロイ用ロール | 消さない（費用はほぼ $0） |
 | [terraform/app](terraform/app) | VPC・NAT Gateway・ALB・ECS・RDS・S3・CloudFront・アラームなど | 動作確認が終わったら消す（約 $0.15/時） |
 
 状態ファイルは S3 のバケット `timeline-sns-tfstate-579225707926` に置く（S3 のロックで同時実行を防ぐ）。

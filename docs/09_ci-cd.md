@@ -7,11 +7,11 @@ GitHub Actions を使う。
 | タイミング | 実行内容 |
 | --- | --- |
 | PR の作成・更新、main への push | CI（[ci.yml](../.github/workflows/ci.yml)）。バックエンド・フロントエンドの静的解析とテスト、E2E テスト |
-| 手動（AWS で動作確認するとき） | AWS に環境を作ってデプロイする／全部消す（[作成と削除](12_aws-architecture.md#作成と削除)） |
+| 手動（AWS で動作確認するとき） | AWS に環境を作ってデプロイする（[aws-up.yml](../.github/workflows/aws-up.yml)）／全部消す（[aws-down.yml](../.github/workflows/aws-down.yml)）。[作成と削除](12_aws-architecture.md#作成と削除) |
 | 手動（任意のタイミング） | パフォーマンステスト（[performance.yml](../.github/workflows/performance.yml)）、表示時間の判定・負荷中の計測を含む E2E（[e2e.yml](../.github/workflows/e2e.yml)）。[テスト方針](08_testing.md)を参照 |
 
 - AWS の環境は置きっぱなしにせず、動作確認するときに作って、終わったら全部消す。そのため main へのマージでは自動でデプロイしない
-- デプロイの流れ：Terraform で環境を作り、バックエンドは ARM のコンテナイメージを作って ECR に置いて ECS のサービスを起動し、フロントはビルドして S3 に置く（[AWS 構成](12_aws-architecture.md#構築とデプロイ)。ワークフローは構築の Issue で作る）
+- デプロイの流れ：Terraform で環境を作り、バックエンドは ARM のコンテナイメージを作って ECR に置いて ECS のサービスを起動し、フロントはビルドして S3 に置く（[AWS 構成](12_aws-architecture.md#構築とデプロイ)）
 - AWS への認証には、GitHub Actions の OIDC 連携を使い、長期のアクセスキーは保存しない
 
 ## CI（PR ごと）

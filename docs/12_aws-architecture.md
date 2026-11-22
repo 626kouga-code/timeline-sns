@@ -131,13 +131,13 @@ flowchart TB
 | --- | --- | --- |
 | タスクロール | 動いているアプリ | 画像のバケットの読み書き・削除 |
 | タスク実行ロール | ECS（タスクの起動） | ECR からイメージを取る、CloudWatch Logs に書く、SSM の秘密を読む |
-| デプロイ用ロール | GitHub Actions（OIDC） | Terraform で環境を作る・消す、フロントのバケットへの書き込み、CloudFront の無効化、ECR への push、ECS のサービス更新 |
+| デプロイ用ロール（`timeline-sns-github-deploy`） | GitHub Actions（OIDC） | 管理者（`AdministratorAccess`）。Terraform で VPC・IAM ロール・RDS・CloudFront などを作って消すため、絞り込むと漏れが出やすい。その代わり、引き受けられるのをこのリポジトリの main ブランチのワークフローだけにしている |
 
 GitHub Actions は OIDC で一時的な認証情報を受け取る。長期のアクセスキーは作らない。デプロイ用ロールは、このリポジトリの main ブランチからだけ使えるように制限する。OIDC の設定とデプロイ用ロールは、環境を消しても残す（次に作るときに使うため。料金はかからない）。
 
 ## 作成と削除
 
-環境は必要なときに作り、動作確認が終わったら全部消す。どちらも GitHub Actions の手動実行（`workflow_dispatch`）でボタン 1 つで行う（ワークフローは構築の Issue で作る）。
+環境は必要なときに作り、動作確認が終わったら全部消す。どちらも GitHub Actions の手動実行（`workflow_dispatch`）でボタン 1 つで行う。Actions タブで [aws-up](../.github/workflows/aws-up.yml)（作る＋デプロイ）または [aws-down](../.github/workflows/aws-down.yml)（全部消す。確認の欄に `destroy` と入れる）を選び、main で「Run workflow」を押す。手元のコマンドでも同じことができる（[infra/README.md](../infra/README.md)）。
 
 | 操作 | 手順 | かかる時間 |
 | --- | --- | --- |
@@ -192,7 +192,7 @@ GitHub Actions は OIDC で一時的な認証情報を受け取る。長期の�
 - 状態ファイルは S3 のバケットに置き、S3 のロック（`use_lockfile`）で同時実行を防ぐ。状態ファイルのバケットだけは最初に手で作る
 - 手順は [infra/README.md](../infra/README.md)。構成は 2 つに分ける
   - `infra/terraform/app`（作って消す）：VPC・サブネット・NAT Gateway・セキュリティグループ、S3（フロント・画像）、CloudFront（VPC オリジン・CloudFront Functions）、ALB、ECS（クラスター・サービス・タスク定義）、RDS、SSM Parameter Store、IAM ロール、CloudWatch（ロググループ・メトリクスフィルタ・アラーム）
-  - `infra/terraform/persistent`（消さずに残す。費用はほぼ $0）：ECR（環境を作る前にイメージを push できるように。最新 3 個だけ残す）、アラームの通知先の SNS（メールの購読確認を 1 回で済ませるため）、AWS Budgets（月 $5）。GitHub Actions の OIDC とデプロイ用ロールは #93 で足す
+  - `infra/terraform/persistent`（消さずに残す。費用はほぼ $0）：ECR（環境を作る前にイメージを push できるように。最新 3 個だけ残す）、アラームの通知先の SNS（メールの購読確認を 1 回で済ませるため）、AWS Budgets（月 $5）、GitHub Actions の OIDC とデプロイ用ロール
 - `terraform destroy` で全部消えるように、S3 は中身があっても消せる設定（`force_destroy`）にし、RDS は削除保護なし・最終スナップショットなしにする
 - 認証は環境変数で渡す（手元は `AWS_PROFILE=trello-app`、GitHub Actions は OIDC）
 
@@ -200,9 +200,11 @@ GitHub Actions は OIDC で一時的な認証情報を受け取る。長期の�
 
 環境がない時間のほうが長いので、main へのマージでは自動でデプロイしない。「作る」のワークフローの中でデプロイする（[作成と削除](#作成と削除)）。
 
-1. フロント：`npm run build` → S3 に同期（`assets/` は長いキャッシュ、`index.html` はキャッシュしない）
-2. バックエンド：ARM のイメージをビルド → ECR に push → ECS のサービスを起動
-3. 作ったあとにコードを直して確かめ直したいときは、同じワークフローをもう一度実行する（環境はそのままで、新しい版に入れ替える。CloudFront の `/index.html` も無効化する）
+1. バックエンド：ARM のランナー（`ubuntu-24.04-arm`）でイメージをビルド → ECR に push（同じコミットのイメージがあれば作らない）
+2. `terraform apply`（イメージのタグ＝コミット ID）→ ECS のサービスを起動
+3. フロント：`npm run build` → S3 に同期（`assets/` は長いキャッシュ、`index.html` はキャッシュしない）
+4. バックエンドが動くのを待ち、URL を実行結果（Summary）に出す
+5. 作ったあとにコードを直して確かめ直したいときは、同じワークフローをもう一度実行する（環境はそのままで、新しい版に入れ替える。CloudFront の `/index.html` も無効化する）
 
 ### コンテナイメージ
 
