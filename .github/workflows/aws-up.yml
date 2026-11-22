@@ -1,0 +1,119 @@
+# AWS に環境を作ってデプロイする（docs/12「作成と削除」、手順の中身は infra/README.md と同じ）。
+# Actions タブの「aws-up」→「Run workflow」で、main を選んで実行する。20〜30 分かかる。
+# 環境があるときにもう一度実行すると、その時点の main の版に入れ替える。
+# 確認が終わったら「aws-down」で全部消す（消し忘れると 1 日 約 $3.7 かかる）。
+name: aws-up
+
+on:
+  workflow_dispatch:
+
+# 作る・消すを同時に動かさない
+concurrency:
+  group: aws
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # AWS の OIDC で一時的な認証情報を受け取る
+
+env:
+  AWS_REGION: ap-northeast-1
+  AWS_ROLE: arn:aws:iam::579225707926:role/timeline-sns-github-deploy
+  ECR_REPOSITORY: timeline-sns-backend
+
+jobs:
+  # バックエンドの ARM のイメージを作って ECR に置く。ARM のランナーなので、まねて動かさずに速く作れる
+  image:
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: tag
+        run: echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # タグは変えられない設定なので、同じコミットのイメージがあれば作らない
+      - id: exists
+        run: |
+          if aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag=${{ steps.tag.outputs.tag }} > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.exists.outputs.exists != 'true'
+        uses: docker/setup-buildx-action@v4
+
+      - if: steps.exists.outputs.exists != 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          tags: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.tag.outputs.tag }}
+
+  deploy:
+    needs: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 7200
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.16.2
+          terraform_wrapper: false
+
+      - name: 環境を作る（terraform apply）
+        working-directory: infra/terraform/app
+        run: |
+          terraform init -input=false
+          terraform apply -input=false -auto-approve -var image_tag=${{ needs.image.outputs.tag }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # assets/ はファイル名が内容ごとに変わるので長くキャッシュし、index.html はキャッシュさせない
+      - name: フロントを置く
+        run: |
+          cd frontend && npm ci && npm run build && cd ..
+          WEB=$(terraform -chdir=infra/terraform/app output -raw web_bucket)
+          aws s3 sync frontend/dist/assets "s3://$WEB/assets" --delete --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync frontend/dist "s3://$WEB" --delete --exclude "assets/*" --cache-control "no-cache"
+          aws cloudfront create-invalidation --distribution-id "$(terraform -chdir=infra/terraform/app output -raw distribution_id)" --paths "/index.html" > /dev/null
+
+      - name: バックエンドが動くまで待つ
+        run: |
+          aws ecs wait services-stable \
+            --cluster "$(terraform -chdir=infra/terraform/app output -raw ecs_cluster)" \
+            --services "$(terraform -chdir=infra/terraform/app output -raw ecs_service)"
+          URL=$(terraform -chdir=infra/terraform/app output -raw url)
+          for i in $(seq 1 30); do
+            if curl -fsS "$URL/api/timeline/global" > /dev/null; then break; fi
+            sleep 10
+          done
+          curl -fsS "$URL/api/timeline/global" > /dev/null
+          {
+            echo "## 環境を作りました"
+            echo ""
+            echo "- URL: $URL"
+            echo "- バックエンドのイメージ: \`${{ needs.image.outputs.tag }}\`"
+            echo "- 確認が終わったら **aws-down** で全部消してください（約 \$0.15/時）"
+          } >> "$GITHUB_STEP_SUMMARY"
