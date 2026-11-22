@@ -1,0 +1,8 @@
+# イメージのビルドに使わないもの（ビルドを速くし、手元の生成物が紛れ込まないように）
+.gradle
+build
+bin
+out
+.idea
+.vscode
+*.iml

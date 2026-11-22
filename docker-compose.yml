@@ -49,6 +49,28 @@ services:
       timeout: 5s
       retries: 10
 
+  # 本番用のバックエンドのイメージ（backend/Dockerfile）を、手元の DB・S3Mock につないで動かす確認用（docs/12）。
+  # profile "app" を付けたサービスなので、普段の `docker compose up -d` では起動しない。8080 を使うので、bootRun とは同時に動かせない
+  #   docker compose --profile app up -d --build backend
+  # 設定は本番と同じ（プロファイルなし。ログは JSON、Swagger UI は無効）で、つなぎ先だけ手元のものにする
+  backend:
+    build: ./backend
+    profiles: ["app"]
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/timeline
+      STORAGE_ENDPOINT: http://s3mock:9090
+      # ローカル確認専用の値。本番は SSM Parameter Store から渡す
+      JWT_SECRET: local-only-jwt-secret-0123456789abcdef
+    ports:
+      - "8080:8080"
+    # Fargate と同じ 1GB に絞り、メモリの設定（MaxRAMPercentage）が効くことも確かめる
+    mem_limit: 1g
+    depends_on:
+      postgres:
+        condition: service_healthy
+      s3mock:
+        condition: service_started
+
   # パフォーマンステスト（k6）。profile "perf" を付けたサービスなので、普段の `docker compose up -d` では起動しない。
   # ホストで動かしているバックエンド（8080）に負荷をかける。手順は docs/08 の「パフォーマンステスト」
   #   docker compose run --rm k6 run /perf/timeline.ts

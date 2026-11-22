@@ -88,7 +88,7 @@ flowchart TB
 ### ECS Fargate（バックエンド）
 
 - タスクのサイズ：ARM（Graviton）、0.5 vCPU・メモリ 1GB、1 タスク。JVM のヒープはコンテナのメモリの 75% まで（`-XX:MaxRAMPercentage=75`）
-- イメージは ECR に置く（Dockerfile は構築の Issue で作る）。タグは Git のコミット ID
+- イメージは ECR に置く（[コンテナイメージ](#コンテナイメージ)）。タグは Git のコミット ID
 - 環境変数（[application.yml](../backend/src/main/resources/application.yml) の値を上書きする）
 
     | 変数 | 値 |
@@ -104,7 +104,7 @@ flowchart TB
 - プロファイルは指定しない（本番の設定。ログは JSON、Swagger UI は無効）
 - ログは `awslogs` ドライバで CloudWatch Logs の `/timeline-sns/backend` に送る（アプリは JSON を標準出力に出す作りになっている）
 - DB のマイグレーション（Flyway）は起動時に自動で流れる。作ったばかりの空の DB にも、起動時にすべてのテーブルが作られる
-- 起動にかかる時間（Spring Boot と Flyway）を見込んで、ヘルスチェックの猶予を 2 分ほどとる
+- 起動にかかる時間（Spring Boot と Flyway）を見込んで、ヘルスチェックの猶予を 3 分ほどとる（手元の PC で 30 秒弱。0.5 vCPU ではそれより遅い）
 
 ### RDS（PostgreSQL）
 
@@ -202,11 +202,30 @@ GitHub Actions は OIDC で一時的な認証情報を受け取る。長期の�
 2. バックエンド：ARM のイメージをビルド → ECR に push → ECS のサービスを起動
 3. 作ったあとにコードを直して確かめ直したいときは、同じワークフローをもう一度実行する（環境はそのままで、新しい版に入れ替える。CloudFront の `/index.html` も無効化する）
 
-### アプリ側で必要な準備（構築の Issue で行う）
+### コンテナイメージ
 
-- バックエンドの Dockerfile（ARM、Java 25 の JRE、JVM のメモリ設定）
-- 本番の環境変数（上の表）。`STORAGE_PUBLIC_BASE_URL=/media` にしたとき、画面の画像 URL が `/media/<キー>` になり、CloudFront 経由で表示されることを確かめる。ローカル開発は今まで通り `/api/media`（S3Mock）
-- メール（SES）は、メールを送る機能（Could）を作るときに追加する
+バックエンドのイメージは [backend/Dockerfile](../backend/Dockerfile) で作る。
+
+- 2 段階で作る。① JDK のイメージで jar を作り、層（ライブラリ・アプリのコード）に分けて取り出す → ② JRE だけのイメージ（`eclipse-temurin:25-jre`）に、変わりにくい順に重ねる。コードだけ変えたときは、送るイメージの差分が小さくて済む
+- 本番は ARM（Graviton）なので `linux/arm64` で作る：`docker buildx build --platform linux/arm64 -t timeline-sns-backend backend`。jar は CPU の種類によらないので、①はビルドする PC の CPU のまま動かす（ARM をまねて動かすと何倍も遅いため）
+- テスト・静的解析は CI で済んでいるので、イメージを作るときは流さない
+- root ではないユーザー（`app`）で動かす。ヒープはコンテナのメモリの 75% まで（`JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75`。1GB なら 768MB）
+- ヘルスチェックは ALB が `/actuator/health` で行うので、イメージには入れない
+
+#### 手元で動かして確かめる
+
+本番と同じ設定（プロファイルなし。ログは JSON、Swagger UI は無効）のまま、つなぎ先だけ docker compose の PostgreSQL・S3Mock にして動かせる。8080 を使うので、`bootRun` のバックエンドは止めておく。
+
+```bash
+docker compose --profile app up -d --build backend   # 起動（メモリは Fargate と同じ 1GB に制限）
+cd frontend && npm run dev                           # 画面は http://localhost:5173（/api は 8080 のイメージに届く）
+docker compose --profile app stop backend            # 止める
+```
+
+2026-11-22 に、amd64 と arm64（まねて動かしたもの）の両方で、登録・画像付き投稿・画像の配信・OGP まで動くことを確かめた。
+
+- 画像を `/media/<キー>` で配る設定（`STORAGE_PUBLIC_BASE_URL=/media`）は CloudFront があって初めて動くので、AWS に作ったあとに確かめる（#91）
+- メール（SES）は使わない（メールを送る機能は作らない）
 
 ## 今後の選択肢
 

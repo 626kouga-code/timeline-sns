@@ -37,7 +37,7 @@ SNSアプリ/
 ├── e2e/                 # Playwright の E2E テスト
 ├── perf/                # k6 の負荷テスト
 ├── docs/                # 要件定義書などの設計資料
-├── docker-compose.yml   # ローカル用の PostgreSQL・S3Mock・Mailpit
+├── docker-compose.yml   # ローカル用の PostgreSQL・S3Mock・Mailpit（本番用イメージの確認用のバックエンドも）
 └── .github/workflows/   # CI/CD
 ```
 
