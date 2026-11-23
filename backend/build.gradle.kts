@@ -1,7 +1,7 @@
 plugins {
     java
     checkstyle
-    id("org.springframework.boot") version "4.1.2"
+    id("org.springframework.boot") version "4.2.0"
     id("io.spring.dependency-management") version "1.1.7"
     id("com.github.spotbugs") version "6.5.13"
 }
@@ -32,7 +32,7 @@ dependencies {
     // API 仕様書（OpenAPI）の自動生成と Swagger UI。有効にするのはローカルとテストだけ（application.yml）
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0")
     // 画像の保存先（本番は S3、ローカル・テストは S3 互換の S3Mock）
-    implementation(platform("software.amazon.awssdk:bom:2.59.3"))
+    implementation(platform("software.amazon.awssdk:bom:2.59.5"))
     implementation("software.amazon.awssdk:s3")
     // 画像処理。ImageIO に WebP の読み込みを足し、Exif の向き（Orientation）を読む
     implementation("com.twelvemonkeys.imageio:imageio-webp:3.15.3")
